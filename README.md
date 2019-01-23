@@ -1,0 +1,1 @@
+# vaas-registration-hook
