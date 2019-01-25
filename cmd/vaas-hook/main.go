@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/allegro/vaas-registration-hook/action"
+	"github.com/allegro/vaas-registration-hook/k8s"
 )
 
 const (
@@ -19,10 +20,20 @@ const (
 var (
 	// Version holds the version of this software
 	Version string
+	// Contains configuration obtained from various sources
+	Config  CommonConfig
 
 	debug bool
 	app   *cli.App
 )
+
+// CommonConfig represents common flag values
+type CommonConfig struct {
+	Debug    bool
+	Director string
+	Address  string
+	Port     int
+}
 
 func init() {
 	// ensure we will always have logs in logfmt format
@@ -32,6 +43,22 @@ func init() {
 	}
 	log.SetFormatter(formatter)
 	log.Printf("Initializing $s %s", AppName, Version)
+
+	Config = CommonConfig{}
+	podInfo, err := k8s.GetPodInfo()
+	if err == nil {
+		log.Info("K8s Pod environment detected")
+		Config.Address = podInfo.GetPodIP()
+		Config.Port = podInfo.GetDefaultPort()
+		director, err := podInfo.GetDirector()
+		if err == nil {
+			Config.Director = director
+		} else {
+			log.Errorf("could not find VaaS director in Pod info: %s", err)
+		}
+	} else {
+		log.Errorf("K8s Pod not detected: %s", err)
+	}
 
 	app = cli.NewApp()
 	app.Name = AppName
@@ -67,7 +94,7 @@ func getCommonFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:        flagDebug,
 			Usage:       "turn on debugging output",
-			Destination: &debug,
+			Destination: &Config.Debug,
 			EnvVar:      "VAAS_HOOK_DEBUG",
 		},
 		cli.StringFlag{
@@ -86,16 +113,22 @@ func getCommonFlags() []cli.Flag {
 			EnvVar: "VAAS_KEY",
 		},
 		cli.StringFlag{
-			Name:  action.FlagDirector,
-			Usage: "VaaS director to register this backend with",
+			Name:        action.FlagDirector,
+			Usage:       "VaaS director to register this backend with",
+			Destination: &Config.Director,
+			Value:       Config.Director,
 		},
 		cli.StringFlag{
-			Name:  action.FlagAddress,
-			Usage: "IP address of this backend",
+			Name:        action.FlagAddress,
+			Usage:       "IP address of this backend",
+			Destination: &Config.Address,
+			Value:       Config.Address,
 		},
 		cli.IntFlag{
-			Name:  action.FlagPort,
-			Usage: "port of this backend",
+			Name:        action.FlagPort,
+			Usage:       "port of this backend",
+			Destination: &Config.Port,
+			Value:       Config.Port,
 		},
 		cli.BoolFlag{
 			Name:  action.FlagDryRun,

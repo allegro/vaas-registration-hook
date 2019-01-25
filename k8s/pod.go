@@ -10,9 +10,10 @@ import (
 
 // Annotation keys
 const (
-	keyDC     = "podDC"
-	keyEnv    = "podEnvironment"
-	keyWeight = "podWeight"
+	keyDC       = "podDC"
+	keyEnv      = "podEnvironment"
+	keyDirector = "podDirector"
+	keyWeight   = "podWeight"
 )
 
 // PodInfo describes a k8s Pod
@@ -43,6 +44,17 @@ func (pi PodInfo) GetPorts() []*int32 {
 	}
 
 	return []*int32{}
+}
+
+// GetDefaultPort returns the first available port
+func (pi PodInfo) GetDefaultPort() int {
+	ports := pi.GetPorts()
+
+	if len(ports) > 0 {
+		return int(*ports[0])
+	}
+
+	return 0
 }
 
 func (pi PodInfo) getPorts(container *corev1.Container) []*int32 {
@@ -86,18 +98,27 @@ func (pi PodInfo) GetPodIP() string {
 	return pi.GetStatus().GetPodIP()
 }
 
+// GetDirector looks up VaaS director name in Pod annotations
+func (pi PodInfo) GetDirector() (string, error) {
+	director := pi.FindAnnotation(keyDirector)
+	if director == "" {
+		return "", fmt.Errorf("director annotation is empty, annotation key: %s", keyDirector)
+	}
+	return director, nil
+}
+
 // GetPodInfo fetches k8s PodInfo for the current Pod
-func GetPodInfo() (PodInfo, error) {
+func GetPodInfo() (*PodInfo, error) {
 	ctx := context.Background()
 	podClient, err := clientProvider()
 	if err != nil {
-		return PodInfo{}, err
+		return nil, err
 	}
 
 	pod, err := podClient.GetPod(ctx)
 	if err != nil {
-		return PodInfo{}, err
+		return nil, err
 	}
 
-	return PodInfo{pod}, err
+	return &PodInfo{pod}, err
 }

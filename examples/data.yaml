@@ -1,0 +1,18 @@
+- fields:
+    date_joined: 2014-12-08 09:23:38.799778+00:00
+    email: admin@vaas.example.com
+    first_name: ''
+    groups: []
+    is_active: true
+    is_staff: true
+    is_superuser: true
+    last_login: 2014-12-08 09:23:45.199983+00:00
+    last_name: ''
+    password: pbkdf2_sha256$12000$yxB95qHh91x5$oYW0Jrsb8jLGVo0tKypOPRap/wr+n+3TjkOP6cT9G4o=
+    user_permissions: []
+    username: admin
+  model: auth.user
+  pk: 1
+- fields: {created: '2014-12-12 12:00:00+00:00', key: admin_api_key, user: 1}
+  model: tastypie.apikey
+  pk: 1

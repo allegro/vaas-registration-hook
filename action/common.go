@@ -19,7 +19,7 @@ const (
 	// FlagAddr address of this backend
 	FlagAddress = "addr"
 	// FlagPort represents the port of this backend
-	FlagPort = "port"
+	FlagPort = "port, p"
 	// FlagDryRun only perform read operations, do not make any changes
 	FlagDryRun = "dry-run"
 	// FlagCanaryTag
