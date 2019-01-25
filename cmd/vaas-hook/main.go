@@ -20,8 +20,8 @@ const (
 var (
 	// Version holds the version of this software
 	Version string
-	// Contains configuration obtained from various sources
-	Config  CommonConfig
+	// Config contains configuration obtained from various sources
+	Config CommonConfig
 
 	debug bool
 	app   *cli.App
@@ -32,6 +32,9 @@ type CommonConfig struct {
 	Debug    bool
 	Director string
 	Address  string
+	VaaSURL  string
+	VaaSUser string
+	VaaSKey  string
 	Port     int
 }
 
@@ -42,7 +45,7 @@ func init() {
 		QuoteEmptyFields: true,
 	}
 	log.SetFormatter(formatter)
-	log.Printf("Initializing $s %s", AppName, Version)
+	log.Printf("Initializing %s %s", AppName, Version)
 
 	Config = CommonConfig{}
 	podInfo, err := k8s.GetPodInfo()
@@ -56,6 +59,10 @@ func init() {
 		} else {
 			log.Errorf("could not find VaaS director in Pod info: %s", err)
 		}
+		Config.VaaSURL = podInfo.GetVaaSURL()
+		Config.VaaSUser = podInfo.GetVaaSUser()
+		Config.VaaSKey = podInfo.GetVaaSKey()
+		log.Debug(Config)
 	} else {
 		log.Errorf("K8s Pod not detected: %s", err)
 	}
@@ -98,19 +105,22 @@ func getCommonFlags() []cli.Flag {
 			EnvVar:      "VAAS_HOOK_DEBUG",
 		},
 		cli.StringFlag{
-			Name:   action.FlagVaaSURL,
-			Usage:  "address of the VaaS endpoint",
-			EnvVar: "VAAS_URL",
+			Name:        action.FlagVaaSURL,
+			Usage:       "address of the VaaS endpoint",
+			Destination: &Config.VaaSURL,
+			EnvVar:      "VAAS_URL",
 		},
 		cli.StringFlag{
-			Name:   action.FlagUser,
-			Usage:  "user for Auth",
-			EnvVar: "VAAS_USER",
+			Name:        action.FlagUser,
+			Usage:       "user for Auth",
+			Destination: &Config.VaaSUser,
+			EnvVar:      "VAAS_USER",
 		},
 		cli.StringFlag{
-			Name:   action.FlagSecretKey,
-			Usage:  "client key for Auth",
-			EnvVar: "VAAS_KEY",
+			Name:        action.FlagSecretKey,
+			Usage:       "client key for Auth",
+			Destination: &Config.VaaSKey,
+			EnvVar:      "VAAS_KEY",
 		},
 		cli.StringFlag{
 			Name:        action.FlagDirector,

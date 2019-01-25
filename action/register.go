@@ -27,6 +27,7 @@ func GetRegisterFlags() []cli.Flag {
 		cli.IntFlag{
 			Name:  FlagWeight,
 			Usage: "initial weight of this backend",
+			Value: 1,
 		},
 		cli.StringFlag{
 			Name:  FlagDC,

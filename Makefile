@@ -46,3 +46,6 @@ test: test-deps
 	go test -v -coverprofile=$(BUILD_FOLDER)/coverage.txt -covermode=atomic ./...
 
 test-deps: $(BUILD_FOLDER)
+
+integration-test:
+	scripts/integration_test.sh
