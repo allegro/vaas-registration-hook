@@ -20,8 +20,8 @@ const (
 var (
 	// Version holds the version of this software
 	Version string
-	// Contains configuration obtained from various sources
-	Config  CommonConfig
+	// Config contains configuration obtained from various sources
+	Config CommonConfig
 
 	debug bool
 	app   *cli.App
@@ -42,7 +42,7 @@ func init() {
 		QuoteEmptyFields: true,
 	}
 	log.SetFormatter(formatter)
-	log.Printf("Initializing $s %s", AppName, Version)
+	log.Printf("Initializing %s %s", AppName, Version)
 
 	Config = CommonConfig{}
 	podInfo, err := k8s.GetPodInfo()

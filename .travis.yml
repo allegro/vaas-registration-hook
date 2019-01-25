@@ -1,8 +1,11 @@
 language: go
 go:
 - 1.10.x
+before_script:
+- scripts/install_local_k8s.sh
 script:
 - make
+- make integration-test
 after_success:
 - bash <(curl -s https://codecov.io/bash)
 before_deploy:
