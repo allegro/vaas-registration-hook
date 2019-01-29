@@ -1,6 +1,10 @@
 language: go
 go:
 - 1.10.x
+- 1.11.x
+
+go_import_path: github.com/allegro/vaas-registration-hook
+
 before_script:
 - scripts/install_local_k8s.sh
 script:
