@@ -8,7 +8,7 @@
 
 [VaaS][1] integration based on a hook mechanic.
 An app is usually registered with VaaS once it becomes healthy and deregistered before termination.
-Task’s desired address (`-aaddress`) and port (`--port`) will be registered under director 
+Task’s desired address (`--addr`) and port (`--port`) will be registered under director
 provided by `--director`.
 If task has defined weight it can be provided with `--weight`
 If task is a canary instance (has `--canary` switch) backend is tagged
