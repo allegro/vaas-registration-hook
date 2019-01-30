@@ -2,6 +2,15 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: myservice-pod
+  annotations: {
+    "podDirector" : "director1",
+    "podEnvironment" : "dev",
+    "podDC" : "-dc1",
+    "podWeight" : "1",
+    "vaasUser" : "admin",
+    "vaasKey" : "admin_api_key",
+    "vaasUrl" : "http://localhost:80"
+  }
 spec:
   containers:
   - name: myservice-with-hooks-container
