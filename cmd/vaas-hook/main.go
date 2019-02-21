@@ -6,6 +6,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/allegro/vaas-registration-hook/action"
+	"github.com/allegro/vaas-registration-hook/k8s"
 )
 
 const (
@@ -45,6 +48,24 @@ func init() {
 	log.Printf("Initializing %s %s", AppName, Version)
 
 	Config = CommonConfig{}
+	podInfo, err := k8s.GetPodInfo()
+	if err == nil {
+		log.Info("K8s Pod environment detected")
+		Config.Address = podInfo.GetPodIP()
+		Config.Port = podInfo.GetDefaultPort()
+		director, err := podInfo.GetDirector()
+		if err == nil {
+			Config.Director = director
+		} else {
+			log.Errorf("could not find VaaS director in Pod info: %s", err)
+		}
+		Config.VaaSURL = podInfo.GetVaaSURL()
+		Config.VaaSUser = podInfo.GetVaaSUser()
+		Config.VaaSKey = podInfo.GetVaaSKey()
+		log.Debug(Config)
+	} else {
+		log.Errorf("K8s Pod not detected: %s", err)
+	}
 
 	app = cli.NewApp()
 	app.Name = AppName
@@ -83,9 +104,66 @@ func getCommonFlags() []cli.Flag {
 			Destination: &Config.Debug,
 			EnvVar:      "VAAS_HOOK_DEBUG",
 		},
+		cli.StringFlag{
+			Name:        action.FlagVaaSURL,
+			Usage:       "address of the VaaS endpoint",
+			Destination: &Config.VaaSURL,
+			EnvVar:      "VAAS_URL",
+		},
+		cli.StringFlag{
+			Name:        action.FlagUser,
+			Usage:       "user for Auth",
+			Destination: &Config.VaaSUser,
+			EnvVar:      "VAAS_USER",
+		},
+		cli.StringFlag{
+			Name:        action.FlagSecretKey,
+			Usage:       "client key for Auth",
+			Destination: &Config.VaaSKey,
+			EnvVar:      "VAAS_KEY",
+		},
+		cli.StringFlag{
+			Name:        action.FlagDirector,
+			Usage:       "VaaS director to register this backend with",
+			Destination: &Config.Director,
+			Value:       Config.Director,
+		},
+		cli.StringFlag{
+			Name:        action.FlagAddress,
+			Usage:       "IP address of this backend",
+			Destination: &Config.Address,
+			Value:       Config.Address,
+		},
+		cli.IntFlag{
+			Name:        action.FlagPort,
+			Usage:       "port of this backend",
+			Destination: &Config.Port,
+			Value:       Config.Port,
+		},
+		cli.BoolFlag{
+			Name:  action.FlagDryRun,
+			Usage: "do not perform any changes, just print requests",
+		},
+		cli.BoolFlag{
+			Name:  action.FlagCanaryTag,
+			Usage: "this backend is a canary",
+		},
 	}
 }
 
 func getCommands() []cli.Command {
-	return []cli.Command{}
+	return []cli.Command{
+		{
+			Name:   action.RegisterName,
+			Usage:  "register a backend with VaaS",
+			Action: action.Register,
+			Flags:  action.GetRegisterFlags(),
+		},
+		{
+			Name:   action.DeregisterName,
+			Usage:  "deregister a backend from VaaS",
+			Action: action.Deregister,
+			Flags:  action.GetDeregisterFlags(),
+		},
+	}
 }
