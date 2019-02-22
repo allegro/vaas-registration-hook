@@ -32,10 +32,7 @@ spec:
     lifecycle:
       postStart:
         exec:
-          command: ["/bin/sh", "-c", "/hooks/vaas-hook --debug register"]
-      preStop:
-        exec:
-          command: ["/bin/sh", "-c", "/hooks/vaas-hook --debug deregister"]
+          command: ["/bin/sh", "-c", "/hooks/vaas-hook help && /hooks/vaas-hook --debug register"]
   - name: vaas-dev-container
     image: allegro/vaas
     ports:
