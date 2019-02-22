@@ -8,11 +8,35 @@
 
 [VaaS][1] integration based on a hook mechanic.
 An app is usually registered with VaaS once it becomes healthy and deregistered before termination.
-Task’s desired address (`--address`) and port (`--port`) will be registered under director 
-provided by `--director`.
-If task has defined weight it can be provided with `--weight`
-If task is a canary instance (has `--canary` switch) backend is tagged
-as a canary.
+
+## Usage
+### CLI
+Task’s desired address (`--addr`) and port (`--port, -p`) will be (de)registered under 
+a director provided by `--director`. A VaaS API url needs to be provided (`--vaas-url` or `VAAS_URL`) 
+along with an API user (`--user, -u`) and secret key (`--key, -k`). 
+If task needs a defined weight it can be provided with `--weight` at registration.
+Registered backend can be tagged as a canary using `--canary`. 
+
+Examples:
+```bash
+export VAAS_URL="http://vaas.example.com/api"
+export VAAS_USER="admin"
+export VAAS_KEY="secret-key"
+vaas-hook --debug --addr 192.168.0.10 -p 80 register --weight 1
+vaas-hook --debug --addr 192.168.0.10 -p 80 deregister --backend-id 12345
+```
+
+### Kubernetes
+This hook can also read a Kubernetes environment and access annotations via it's Pod API.
+All the available annotations can be viewed in [k8s/pod.go](k8s/pod.go).
+Action names and debug flag still needs to be provided via command line.
+A working example can be found in [examples/service-with-lifecycle.yaml](examples/service-with-lifecycle.yaml)
+
+Examples:
+```bash
+vaas-hook --debug register --weight 1
+vaas-hook --debug deregister
+```
 
 ## Requirements
 
