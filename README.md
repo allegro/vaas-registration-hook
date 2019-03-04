@@ -22,8 +22,8 @@ Examples:
 export VAAS_URL="http://vaas.example.com/api"
 export VAAS_USER="admin"
 export VAAS_KEY="secret-key"
-vaas-hook --debug --addr 192.168.0.10 -p 80 register --weight 1
-vaas-hook --debug --addr 192.168.0.10 -p 80 deregister --backend-id 12345
+vaas-hook --debug --addr=192.168.0.10 -p 80 register cli --weight 1
+vaas-hook --debug --addr=192.168.0.10 -p 80 deregister cli --backend-id 12345
 ```
 
 ### Kubernetes
@@ -34,8 +34,8 @@ A working example can be found in [examples/service-with-lifecycle.yaml](example
 
 Examples:
 ```bash
-vaas-hook --debug register --weight 1
-vaas-hook --debug deregister
+vaas-hook --debug register k8s
+vaas-hook --debug deregister k8s
 ```
 
 ## Requirements

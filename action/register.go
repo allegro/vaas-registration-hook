@@ -2,10 +2,12 @@ package action
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	"github.com/allegro/vaas-registration-hook/k8s"
 	"github.com/allegro/vaas-registration-hook/vaas"
 )
 
@@ -36,19 +38,50 @@ func GetRegisterFlags() []cli.Flag {
 	}
 }
 
-// Register adds a backend to VaaS
-func Register(c *cli.Context) error {
-	config := getCommonParameters(c.Parent())
-	log.Debug(config)
+// RegisterCLI configures a VaaS client from CLI data and runs register()
+func RegisterCLI(c *cli.Context) error {
+	config := getCommonParameters(c.Parent().Parent())
+	debug(config)
 
-	apiClient := vaas.NewClient(config.VaaSUrl, config.Username, config.Key)
+	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	weight := c.Int(FlagWeight)
 	dcName := c.String(FlagDC)
 
 	return register(apiClient, config, weight, dcName)
 }
 
-func register(client vaas.Client, cfg commonParameters, weight int, dcName string) error {
+// RegisterK8s configures a VaaS client from K8s data and runs register()
+func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
+	config.Address = podInfo.GetPodIP()
+	config.Port = podInfo.GetDefaultPort()
+	director, err := podInfo.GetDirector()
+	if err == nil {
+		config.Director = director
+	} else {
+		log.Errorf("could not find VaaS director in Pod info: %s", err)
+	}
+	config.VaaSURL = podInfo.GetVaaSURL()
+	config.VaaSUser = podInfo.GetVaaSUser()
+	config.VaaSKey = podInfo.GetVaaSKey()
+	debug(config)
+
+	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
+	weight, err := podInfo.GetWeight()
+	if err != nil {
+		log.Errorf("unusable weight found %q", weight)
+		weight = 1
+	}
+	dcName, err := podInfo.GetDataCenter()
+	if err != nil {
+		log.Errorf("unusable DC name found %q", weight)
+		weight = 1
+	}
+
+	return register(apiClient, config, weight, dcName)
+}
+
+// register adds a backend to VaaS
+func register(client vaas.Client, cfg CommonConfig, weight int, dcName string) error {
 	var tags []string
 	if cfg.Canary {
 		tags = []string{canaryTag}
@@ -70,6 +103,19 @@ func register(client vaas.Client, cfg commonParameters, weight int, dcName strin
 		Tags:               tags,
 		ResourceURI:        "",
 	}
-	_, err = client.AddBackend(&backend)
+	backendID, err := client.AddBackend(&backend)
+
+	if err == nil {
+		log.Info("Received VaaS backend id: %s", backendID)
+		saveBackendID(backendID)
+	}
+
 	return err
+}
+
+func saveBackendID(s string) {
+	err := ioutil.WriteFile(IDFileLoc, []byte(s), 0644)
+	if err != nil {
+		log.Errorf("cannot save backend id: %s", err)
+	}
 }

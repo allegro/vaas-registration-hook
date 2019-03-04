@@ -13,30 +13,17 @@ import (
 
 const (
 	// AppName is the name of this software
-	AppName   = "vaas-registration-hook"
-	flagDebug = "debug"
+	AppName = "vaas-registration-hook"
 )
 
 var (
 	// Version holds the version of this software
 	Version string
 	// Config contains configuration obtained from various sources
-	Config CommonConfig
+	Config action.CommonConfig
 
-	debug bool
-	app   *cli.App
+	app *cli.App
 )
-
-// CommonConfig represents common flag values
-type CommonConfig struct {
-	Debug    bool
-	Director string
-	Address  string
-	VaaSURL  string
-	VaaSUser string
-	VaaSKey  string
-	Port     int
-}
 
 func init() {
 	// ensure we will always have logs in logfmt format
@@ -47,30 +34,12 @@ func init() {
 	log.SetFormatter(formatter)
 	log.Printf("Initializing %s %s", AppName, Version)
 
-	Config = CommonConfig{}
-	podInfo, err := k8s.GetPodInfo()
-	if err == nil {
-		log.Info("K8s Pod environment detected")
-		Config.Address = podInfo.GetPodIP()
-		Config.Port = podInfo.GetDefaultPort()
-		director, err := podInfo.GetDirector()
-		if err == nil {
-			Config.Director = director
-		} else {
-			log.Errorf("could not find VaaS director in Pod info: %s", err)
-		}
-		Config.VaaSURL = podInfo.GetVaaSURL()
-		Config.VaaSUser = podInfo.GetVaaSUser()
-		Config.VaaSKey = podInfo.GetVaaSKey()
-		log.Debug(Config)
-	} else {
-		log.Errorf("K8s Pod not detected: %s", err)
-	}
+	Config = action.CommonConfig{}
 
 	app = cli.NewApp()
 	app.Name = AppName
 	app.Version = Version
-	app.HideVersion = true
+	app.HideVersion = false
 	app.Usage = "Binary hook for (de)registering in VaaS."
 	app.Flags = getCommonFlags()
 	app.Commands = getCommands()
@@ -84,7 +53,7 @@ func main() {
 	}
 
 	app.Before = func(c *cli.Context) error {
-		if debug {
+		if Config.Debug {
 			log.SetLevel(log.DebugLevel)
 		}
 
@@ -99,54 +68,53 @@ func main() {
 func getCommonFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.BoolFlag{
-			Name:        flagDebug,
+			Name:        action.FlagDebug,
 			Usage:       "turn on debugging output",
 			Destination: &Config.Debug,
-			EnvVar:      "VAAS_HOOK_DEBUG",
+			EnvVar:      action.EnvDebug,
 		},
 		cli.StringFlag{
 			Name:        action.FlagVaaSURL,
 			Usage:       "address of the VaaS endpoint",
 			Destination: &Config.VaaSURL,
-			EnvVar:      "VAAS_URL",
+			EnvVar:      action.EnvVaaSURL,
 		},
 		cli.StringFlag{
 			Name:        action.FlagUser,
 			Usage:       "user for Auth",
 			Destination: &Config.VaaSUser,
-			EnvVar:      "VAAS_USER",
+			EnvVar:      action.EnvVaaSUser,
 		},
 		cli.StringFlag{
 			Name:        action.FlagSecretKey,
 			Usage:       "client key for Auth",
 			Destination: &Config.VaaSKey,
-			EnvVar:      "VAAS_KEY",
+			EnvVar:      action.EnvVaaSKey,
 		},
 		cli.StringFlag{
 			Name:        action.FlagDirector,
 			Usage:       "VaaS director to register this backend with",
 			Destination: &Config.Director,
-			Value:       Config.Director,
 		},
 		cli.StringFlag{
 			Name:        action.FlagAddress,
 			Usage:       "IP address of this backend",
 			Destination: &Config.Address,
-			Value:       Config.Address,
 		},
 		cli.IntFlag{
 			Name:        action.FlagPort,
 			Usage:       "port of this backend",
 			Destination: &Config.Port,
-			Value:       Config.Port,
 		},
 		cli.BoolFlag{
-			Name:  action.FlagDryRun,
-			Usage: "do not perform any changes, just print requests",
+			Name:        action.FlagDryRun,
+			Destination: &Config.DryRun,
+			Usage:       "do not perform any changes, just print requests",
 		},
 		cli.BoolFlag{
-			Name:  action.FlagCanaryTag,
-			Usage: "this backend is a canary",
+			Name:        action.FlagCanaryTag,
+			Destination: &Config.Canary,
+			Usage:       "this backend is a canary",
 		},
 	}
 }
@@ -154,16 +122,65 @@ func getCommonFlags() []cli.Flag {
 func getCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:   action.RegisterName,
-			Usage:  "register a backend with VaaS",
-			Action: action.Register,
-			Flags:  action.GetRegisterFlags(),
+			Name:  action.RegisterName,
+			Usage: "register a backend with VaaS",
+			Subcommands: []cli.Command{
+				{
+					Name:  "cli",
+					Usage: "register using data from command line/env",
+					Action: func(c *cli.Context) error {
+						log.Print("Registering services using data from command line/env")
+						return action.RegisterCLI(c)
+					},
+					Flags: action.GetRegisterFlags(),
+				},
+				{
+					Name:  "k8s",
+					Usage: "register using data from Kubernetes API",
+					Action: func(c *cli.Context) error {
+						log.Print("Registering services using data from Kubernetes API")
+
+						podInfo, err := k8s.GetPodInfo()
+						if err != nil {
+							log.Errorf("K8s Pod not detected: %s", err)
+							return nil
+						}
+						log.Info("K8s Pod environment detected")
+
+						return action.RegisterK8s(podInfo, Config)
+					},
+				},
+			},
 		},
 		{
-			Name:   action.DeregisterName,
-			Usage:  "deregister a backend from VaaS",
-			Action: action.Deregister,
-			Flags:  action.GetDeregisterFlags(),
+			Name:  action.DeregisterName,
+			Usage: "deregister a backend from VaaS",
+			Subcommands: []cli.Command{
+				{
+					Name:  "cli",
+					Usage: "Deregister using data from command line/env",
+					Action: func(c *cli.Context) error {
+						log.Print("Deregistering services using data from command line/env")
+						return action.DeregisterCLI(c)
+					},
+					Flags: action.GetDeregisterFlags(),
+				},
+				{
+					Name:  "k8s",
+					Usage: "Deregister using data from Kubernetes API",
+					Action: func(c *cli.Context) error {
+						log.Print("Deregistering services using data from Kubernetes API")
+
+						podInfo, err := k8s.GetPodInfo()
+						if err != nil {
+							log.Errorf("K8s Pod not detected: %s", err)
+							return nil
+						}
+						log.Info("K8s Pod environment detected")
+						return action.DeregisterK8s(podInfo, Config)
+					},
+				},
+			},
 		},
 	}
 }
