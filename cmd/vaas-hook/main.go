@@ -107,11 +107,6 @@ func getCommonFlags() []cli.Flag {
 			Destination: &Config.Port,
 		},
 		cli.BoolFlag{
-			Name:        action.FlagDryRun,
-			Destination: &Config.DryRun,
-			Usage:       "do not perform any changes, just print requests",
-		},
-		cli.BoolFlag{
 			Name:        action.FlagCanaryTag,
 			Destination: &Config.Canary,
 			Usage:       "this backend is a canary",

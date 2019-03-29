@@ -1,6 +1,7 @@
 package action
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -41,7 +42,11 @@ func GetRegisterFlags() []cli.Flag {
 // RegisterCLI configures a VaaS client from CLI data and runs register()
 func RegisterCLI(c *cli.Context) error {
 	config := getCommonParameters(c.Parent().Parent())
-	debug(config)
+	log.Debugf("Register CLI config: %+v\n", config)
+
+	if config.Director == "" {
+		return errors.New("no VaaS director specified")
+	}
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	weight := c.Int(FlagWeight)
@@ -58,12 +63,13 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 	if err == nil {
 		config.Director = director
 	} else {
-		log.Errorf("could not find VaaS director in Pod info: %s", err)
+		return fmt.Errorf("could not find VaaS director in Pod info: %s", err)
 	}
 	config.VaaSURL = podInfo.GetVaaSURL()
 	config.VaaSUser = podInfo.GetVaaSUser()
 	config.VaaSKey = podInfo.GetVaaSKey()
-	debug(config)
+
+	log.Debugf("Register K8s config: %+v\n", config)
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	weight, err := podInfo.GetWeight()
@@ -81,7 +87,7 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 }
 
 // register adds a backend to VaaS
-func register(client vaas.Client, cfg CommonConfig, weight int, dcName string) error {
+func register(client vaas.Client, cfg CommonConfig, weight int, dcName string) (err error) {
 	var tags []string
 	if cfg.Canary {
 		tags = []string{canaryTag}
@@ -106,11 +112,11 @@ func register(client vaas.Client, cfg CommonConfig, weight int, dcName string) e
 	backendID, err := client.AddBackend(&backend)
 
 	if err == nil {
-		log.Info("Received VaaS backend id: %s", backendID)
+		log.Infof("Received VaaS backend id: %s", backendID)
 		saveBackendID(backendID)
 	}
 
-	return err
+	return
 }
 
 func saveBackendID(s string) {

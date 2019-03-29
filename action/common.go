@@ -3,7 +3,6 @@ package action
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -31,12 +30,8 @@ const (
 	FlagAddress = "addr"
 	// FlagPort represents the port of this backend
 	FlagPort = "port, p"
-	// FlagDryRun only perform read operations, do not make any changes
-	FlagDryRun = "dry-run"
 	// FlagCanaryTag
 	FlagCanaryTag = "canary"
-	// FlagAsyncTimeout
-	FlagAsyncTimeout = "timeout, t"
 
 	// IDFileLoc file containing VaaS backend ID
 	IDFileLoc = "/tmp/vaas.id"
@@ -58,19 +53,13 @@ type CommonConfig struct {
 
 func getCommonParameters(c *cli.Context) CommonConfig {
 	return CommonConfig{
-		Debug:        c.Bool(FlagDebug),
-		VaaSURL:      c.String(FlagVaaSURL),
-		VaaSUser:     c.String(FlagUser),
-		VaaSKey:      c.String(FlagSecretKey),
-		Director:     c.String(FlagDirector),
-		Address:      c.String(FlagAddress),
-		Port:         c.Int(FlagPort),
-		DryRun:       c.Bool(FlagDryRun),
-		AsyncTimeout: c.Duration(FlagAsyncTimeout),
-		Canary:       c.Bool(FlagCanaryTag),
+		Debug:    c.Bool(FlagDebug),
+		VaaSURL:  c.String(FlagVaaSURL),
+		VaaSUser: c.String(FlagUser),
+		VaaSKey:  c.String(FlagSecretKey),
+		Director: c.String(FlagDirector),
+		Address:  c.String(FlagAddress),
+		Port:     c.Int(FlagPort),
+		Canary:   c.Bool(FlagCanaryTag),
 	}
-}
-
-func debug(v interface{}) {
-	log.Debugf("%+v\n", v)
 }
