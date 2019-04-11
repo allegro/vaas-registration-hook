@@ -134,10 +134,10 @@ func TestIfBackendLocationIsSetFromVaasResponseHeader(t *testing.T) {
 	client := NewClient(ts.URL, "username", "api-key")
 
 	location, err := client.AddBackend(&Backend{
-		Address:  "127.0.0.1",
-		Director: "director",
-		DC:       DC{1, "DC1", "api/dc/1", "dc1"},
-		Port:     8080,
+		Address:     "127.0.0.1",
+		DirectorURL: "director",
+		DC:          DC{1, "DC1", "api/dc/1", "dc1"},
+		Port:        8080,
 	})
 
 	require.NoError(t, err)

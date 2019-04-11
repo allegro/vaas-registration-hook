@@ -3,6 +3,7 @@ package vaas
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,13 +31,19 @@ const (
 type Backend struct {
 	ID                 *int     `json:"id,omitempty"`
 	Address            string   `json:"address,omitempty"`
-	Director           string   `json:"director,omitempty"`
+	DirectorURL        string   `json:"director,omitempty"`
 	DC                 DC       `json:"dc,omitempty"`
 	Port               int      `json:"port,omitempty"`
 	InheritTimeProfile bool     `json:"inherit_time_profile,omitempty"`
 	Weight             *int     `json:"weight,omitempty"`
 	Tags               []string `json:"tags,omitempty"`
 	ResourceURI        string   `json:"resource_uri,omitempty"`
+}
+
+// BackendList represents JSON structure of Backend list used in responses in VaaS API.
+type BackendList struct {
+	Meta    Meta      `json:"meta,omitempty"`
+	Objects []Backend `json:"objects,omitempty"`
 }
 
 // DC represents JSON structure of DC in VaaS API.
@@ -56,7 +63,7 @@ type DCList struct {
 // Director represents JSON structure of Director in VaaS API.
 type Director struct {
 	ID          int      `json:"id,omitempty"`
-	Backends    []string `json:"backends,omitempty"`
+	BackendURLs []string `json:"backends,omitempty"`
 	Cluster     []string `json:"cluster,omitempty"`
 	Name        string   `json:"name,omitempty"`
 	ResourceURI string   `json:"resource_uri,omitempty"`
@@ -85,10 +92,12 @@ type Task struct {
 
 // Client is an interface for VaaS API.
 type Client interface {
+	FindDirector(string) (*Director, error)
 	FindDirectorID(string) (int, error)
 	AddBackend(*Backend) (string, error)
 	DeleteBackend(int) error
 	GetDC(string) (*DC, error)
+	FindBackendID(director string, address string, port int) (int, error)
 }
 
 // DefaultClient is a REST client for VaaS API.
@@ -99,11 +108,11 @@ type defaultClient struct {
 	host       string
 }
 
-// FindDirectorID finds Director ID by name.
-func (c *defaultClient) FindDirectorID(name string) (int, error) {
+// FindDirector finds Director by name.
+func (c *defaultClient) FindDirector(name string) (*Director, error) {
 	request, err := c.newRequest("GET", c.host+apiDirectorPath, nil)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	query := request.URL.Query()
@@ -112,16 +121,25 @@ func (c *defaultClient) FindDirectorID(name string) (int, error) {
 
 	var directorList DirectorList
 	if _, err = c.doRequest(request, &directorList); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	for _, director := range directorList.Objects {
 		if director.Name == name {
-			return director.ID, nil
+			return &director, nil
 		}
 	}
 
-	return 0, fmt.Errorf("no Director with name %s found", name)
+	return nil, fmt.Errorf("no Director with name %s found", name)
+}
+
+// FindDirectorID finds Director ID by name.
+func (c *defaultClient) FindDirectorID(name string) (int, error) {
+	director, err := c.FindDirector(name)
+	if err != nil {
+		return 0, fmt.Errorf("cannot determine director ID: %s", err)
+	}
+	return director.ID, nil
 }
 
 // AddBackend adds backend in VaaS director.
@@ -152,13 +170,6 @@ func (c *defaultClient) DeleteBackend(id int) error {
 		log.WithField(vaasBackendIDKey, id).Warn("Tried to remove a non-existent backend")
 		return nil
 	}
-	if err != nil {
-		return err
-	}
-
-	request.Header.Set("Prefer", "respond-async")
-
-	_, err = c.doRequest(request, nil)
 
 	return err
 }
@@ -182,6 +193,37 @@ func (c *defaultClient) GetDC(name string) (*DC, error) {
 	}
 
 	return nil, fmt.Errorf("no DC with name %s found", name)
+}
+
+func (c *defaultClient) FindBackendID(director string, address string, port int) (int, error) {
+	directorFound, err := c.FindDirector(director)
+	if err != nil {
+		return 0, fmt.Errorf("cannot determine director ID: %s", err)
+	}
+
+	request, err := c.newRequest("GET", c.host+apiBackendPath, nil)
+	if err != nil {
+		return 0, fmt.Errorf("could not create backend list request: %s", err)
+	}
+
+	query := request.URL.Query()
+	query.Add("address", address)
+	query.Add("director", fmt.Sprintf("%d", directorFound.ID))
+	query.Add("port", fmt.Sprintf("%d", port))
+	request.URL.RawQuery = query.Encode()
+
+	var backendList BackendList
+	if _, err := c.doRequest(request, &backendList); err != nil {
+		return 0, fmt.Errorf("backend list fetch failed: %s", err)
+	}
+
+	for _, backend := range backendList.Objects {
+		log.Debugf("Backend found: %+v\n", backend)
+		if backend.Address == address && backend.Port == port {
+			return *backend.ID, nil
+		}
+	}
+	return 0, errors.New("backend not found")
 }
 
 func (c *defaultClient) newRequest(method, url string, body interface{}) (*http.Request, error) {
