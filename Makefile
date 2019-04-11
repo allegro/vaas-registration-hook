@@ -4,6 +4,7 @@ APPLICATION_VERSION := $(shell git describe --tags || echo "unknown")
 LDFLAGS := -X main.Version=$(APPLICATION_VERSION)
 
 BUILD_FOLDER := target
+DIST_FOLDER := dist
 GO_BUILD := go build -v -ldflags "$(LDFLAGS)" -a
 
 CURRENT_DIR = $(shell pwd)
@@ -16,9 +17,13 @@ all: lint test build
 
 build: $(BUILD_FOLDER)
 	$(GO_BUILD) -o $(BUILD_FOLDER)/vaas-hook ./cmd/vaas-hook
+	chmod 0755 $(BUILD_FOLDER)/vaas-hook
 
 $(BUILD_FOLDER):
 	mkdir $(BUILD_FOLDER)
+
+$(DIST_FOLDER):
+	mkdir $(DIST_FOLDER)
 
 clean:
 	go clean -v .
@@ -38,9 +43,8 @@ lint-deps:
 	@which gometalinter.v2 > /dev/null || \
 		(go get -u -v gopkg.in/alecthomas/gometalinter.v2 && gometalinter.v2 --install)
 
-package: $(BUILD_FOLDER)/vaas-hook
-	zip -j $(BUILD_FOLDER)/vaas-hook-$(APPLICATION_VERSION)-linux-amd64.zip $(BUILD_FOLDER)/vaas-hook
-	chmod 0755 $(BUILD_FOLDER)/vaas-hook-$(APPLICATION_VERSION)-linux-amd64.zip
+package: $(BUILD_FOLDER)/vaas-hook $(DIST_FOLDER)
+	zip -j $(DIST_FOLDER)/vaas-hook-$(APPLICATION_VERSION)-linux-amd64.zip $(BUILD_FOLDER)/vaas-hook
 
 test: test-deps
 	go test -v -coverprofile=$(BUILD_FOLDER)/coverage.txt -covermode=atomic ./...
