@@ -3,6 +3,7 @@ package vaas
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,7 +31,7 @@ const (
 type Backend struct {
 	ID                 *int     `json:"id,omitempty"`
 	Address            string   `json:"address,omitempty"`
-	Director           string   `json:"director,omitempty"`
+	DirectorURL        string   `json:"director,omitempty"`
 	DC                 DC       `json:"dc,omitempty"`
 	Port               int      `json:"port,omitempty"`
 	InheritTimeProfile bool     `json:"inherit_time_profile,omitempty"`
@@ -56,7 +57,7 @@ type DCList struct {
 // Director represents JSON structure of Director in VaaS API.
 type Director struct {
 	ID          int      `json:"id,omitempty"`
-	Backends    []string `json:"backends,omitempty"`
+	BackendURLs []string `json:"backends,omitempty"`
 	Cluster     []string `json:"cluster,omitempty"`
 	Name        string   `json:"name,omitempty"`
 	ResourceURI string   `json:"resource_uri,omitempty"`
@@ -66,6 +67,12 @@ type Director struct {
 type DirectorList struct {
 	Meta    Meta       `json:"meta,omitempty"`
 	Objects []Director `json:"objects,omitempty"`
+}
+
+// BackendList represents JSON structure of Backend list used in responses in VaaS API.
+type BackendList struct {
+	Meta    Meta      `json:"meta,omitempty"`
+	Objects []Backend `json:"objects,omitempty"`
 }
 
 // Meta represents JSON structure of Meta in VaaS API.
@@ -85,10 +92,12 @@ type Task struct {
 
 // Client is an interface for VaaS API.
 type Client interface {
+	FindDirector(string) (*Director, error)
 	FindDirectorID(string) (int, error)
 	AddBackend(*Backend) (string, error)
 	DeleteBackend(int) error
 	GetDC(string) (*DC, error)
+	FindBackendID(director string, address string, port int) (int, error)
 }
 
 // DefaultClient is a REST client for VaaS API.
@@ -99,11 +108,11 @@ type defaultClient struct {
 	host       string
 }
 
-// FindDirectorID finds Director ID by name.
-func (c *defaultClient) FindDirectorID(name string) (int, error) {
+// FindDirector finds Director by name.
+func (c *defaultClient) FindDirector(name string) (*Director, error) {
 	request, err := c.newRequest("GET", c.host+apiDirectorPath, nil)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	query := request.URL.Query()
@@ -112,16 +121,25 @@ func (c *defaultClient) FindDirectorID(name string) (int, error) {
 
 	var directorList DirectorList
 	if _, err = c.doRequest(request, &directorList); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	for _, director := range directorList.Objects {
 		if director.Name == name {
-			return director.ID, nil
+			return &director, nil
 		}
 	}
 
-	return 0, fmt.Errorf("no Director with name %s found", name)
+	return nil, fmt.Errorf("no Director with name %s found", name)
+}
+
+// FindDirectorID finds Director ID by name.
+func (c *defaultClient) FindDirectorID(name string) (int, error) {
+	director, err := c.FindDirector(name)
+	if err != nil {
+		return 0, fmt.Errorf("cannot determine director ID: %s", err)
+	}
+	return director.ID, nil
 }
 
 // AddBackend adds backend in VaaS director.
@@ -182,6 +200,28 @@ func (c *defaultClient) GetDC(name string) (*DC, error) {
 	}
 
 	return nil, fmt.Errorf("no DC with name %s found", name)
+}
+
+func (c *defaultClient) FindBackendID(director string, address string, port int) (int, error) {
+	directorFound, err := c.FindDirector(director)
+	if err != nil {
+		return 0, fmt.Errorf("cannot determine director ID: %s", err)
+	}
+	for _, backendURL := range directorFound.BackendURLs {
+		request, err := c.newRequest("GET", c.host+backendURL, nil)
+		if err != nil {
+			return 0, fmt.Errorf("cannot fetch backend: %s", err)
+		}
+		var backend Backend
+		if _, err := c.doRequest(request, &backend); err != nil {
+			log.Errorf("backend fetch failed: %s", err)
+			continue
+		}
+		if backend.Address == address && backend.Port == port {
+			return *backend.ID, nil
+		}
+	}
+	return 0, errors.New("backend not found")
 }
 
 func (c *defaultClient) newRequest(method, url string, body interface{}) (*http.Request, error) {

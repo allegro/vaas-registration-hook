@@ -3,8 +3,6 @@ package action
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"strconv"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -31,6 +29,13 @@ func DeregisterCLI(c *cli.Context) error {
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	backendID := c.Int(FlagBackendID)
+	if backendID == 0 {
+		bid, err := apiClient.FindBackendID(config.Director, config.Address, config.Port)
+		if err != nil {
+			return fmt.Errorf("could not determine backend ID: %s", err)
+		}
+		backendID = bid
+	}
 
 	if backendID != 0 {
 		if err := apiClient.DeleteBackend(backendID); err != nil {
@@ -45,18 +50,21 @@ func DeregisterCLI(c *cli.Context) error {
 
 // DeregisterK8s configures a VaaS client from K8s data and removes a backend
 func DeregisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
+	config.Address = podInfo.GetPodIP()
+	config.Port = podInfo.GetDefaultPort()
 	director, err := podInfo.GetDirector()
 	if err != nil {
 		return fmt.Errorf("could not find VaaS director in Pod info: %s", err)
 	}
+	config.Director = director
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 
-	backendID, err := loadBackendID()
+	backendID, err := apiClient.FindBackendID(config.Director, config.Address, config.Port)
 	if err != nil {
 		return fmt.Errorf("could not determine backend ID: %s", err)
 	}
-	log.Infof("Deregistering backend %d from director %s", backendID, director)
+	log.Infof("Deregistering backend %d from director %s", backendID, config.Director)
 	if err := apiClient.DeleteBackend(backendID); err != nil {
 		return fmt.Errorf("could not deregister: %s", err)
 	}
@@ -72,12 +80,4 @@ func GetDeregisterFlags() []cli.Flag {
 			Usage: "known backend id that is to be deregistered",
 		},
 	}
-}
-
-func loadBackendID() (s int, err error) {
-	data, err := ioutil.ReadFile(IDFileLoc)
-	if err == nil {
-		s, err = strconv.Atoi(string(data))
-	}
-	return
 }

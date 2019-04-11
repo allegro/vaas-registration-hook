@@ -17,11 +17,11 @@ const (
 	// EnvVaaSURL address of the VaaS host to query
 	EnvVaaSURL = "VAAS_URL"
 	// FlagUser represents the user name for Auth
-	FlagUser = "user, u"
+	FlagUser = "user"
 	// EnvVaaSUser represents the user name for Auth
 	EnvVaaSUser = "VAAS_USER"
 	// FlagSecretKey client key for Auth
-	FlagSecretKey = "key, k"
+	FlagSecretKey = "key"
 	// EnvVaaSKey client key for Auth
 	EnvVaaSKey = "VAAS_KEY"
 	// FlagDirector represents the director name
@@ -29,7 +29,7 @@ const (
 	// FlagAddr address of this backend
 	FlagAddress = "addr"
 	// FlagPort represents the port of this backend
-	FlagPort = "port, p"
+	FlagPort = "port"
 	// FlagCanaryTag
 	FlagCanaryTag = "canary"
 

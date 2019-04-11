@@ -22,8 +22,8 @@ Examples:
 export VAAS_URL="http://vaas.example.com/api"
 export VAAS_USER="admin"
 export VAAS_KEY="secret-key"
-vaas-hook --debug --addr=192.168.0.10 -p 80 register cli --weight 1
-vaas-hook --debug --addr=192.168.0.10 -p 80 deregister cli --backend-id 12345
+vaas-hook --debug --addr=192.168.0.10 --port 80 --director=hook-test register cli --weight 1 --dc dc1
+vaas-hook --debug --addr=192.168.0.10 --port 80 --director=hook-test deregister cli
 ```
 
 ### Kubernetes

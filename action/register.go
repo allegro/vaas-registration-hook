@@ -3,7 +3,6 @@ package action
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -98,10 +97,12 @@ func register(client vaas.Client, cfg CommonConfig, weight int, dcName string) (
 		return fmt.Errorf("failed getting DC info: %s", err)
 	}
 
+	director, err := client.FindDirector(cfg.Director)
+
 	backend := vaas.Backend{
 		ID:                 nil,
 		Address:            cfg.Address,
-		Director:           cfg.Director,
+		DirectorURL:        director.ResourceURI,
 		DC:                 *dc,
 		Port:               cfg.Port,
 		InheritTimeProfile: false,
@@ -113,15 +114,7 @@ func register(client vaas.Client, cfg CommonConfig, weight int, dcName string) (
 
 	if err == nil {
 		log.Infof("Received VaaS backend id: %s", backendID)
-		saveBackendID(backendID)
 	}
 
 	return
-}
-
-func saveBackendID(s string) {
-	err := ioutil.WriteFile(IDFileLoc, []byte(s), 0644)
-	if err != nil {
-		log.Errorf("cannot save backend id: %s", err)
-	}
 }
