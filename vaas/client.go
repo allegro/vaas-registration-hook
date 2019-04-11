@@ -170,13 +170,6 @@ func (c *defaultClient) DeleteBackend(id int) error {
 		log.WithField(vaasBackendIDKey, id).Warn("Tried to remove a non-existent backend")
 		return nil
 	}
-	if err != nil {
-		return err
-	}
-
-	request.Header.Set("Prefer", "respond-async")
-
-	_, err = c.doRequest(request, nil)
 
 	return err
 }

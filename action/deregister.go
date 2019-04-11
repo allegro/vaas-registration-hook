@@ -44,6 +44,7 @@ func DeregisterCLI(c *cli.Context) error {
 
 		log.WithField(FlagBackendID, backendID).
 			Info("Successfully scheduled backend for deletion via VaaS")
+		return nil
 	}
 	return errors.New("backend ID not provided")
 }
