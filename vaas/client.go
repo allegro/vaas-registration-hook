@@ -40,6 +40,12 @@ type Backend struct {
 	ResourceURI        string   `json:"resource_uri,omitempty"`
 }
 
+// BackendList represents JSON structure of Backend list used in responses in VaaS API.
+type BackendList struct {
+	Meta    Meta      `json:"meta,omitempty"`
+	Objects []Backend `json:"objects,omitempty"`
+}
+
 // DC represents JSON structure of DC in VaaS API.
 type DC struct {
 	ID          int    `json:"id,omitempty"`
@@ -67,12 +73,6 @@ type Director struct {
 type DirectorList struct {
 	Meta    Meta       `json:"meta,omitempty"`
 	Objects []Director `json:"objects,omitempty"`
-}
-
-// BackendList represents JSON structure of Backend list used in responses in VaaS API.
-type BackendList struct {
-	Meta    Meta      `json:"meta,omitempty"`
-	Objects []Backend `json:"objects,omitempty"`
 }
 
 // Meta represents JSON structure of Meta in VaaS API.
@@ -207,16 +207,25 @@ func (c *defaultClient) FindBackendID(director string, address string, port int)
 	if err != nil {
 		return 0, fmt.Errorf("cannot determine director ID: %s", err)
 	}
-	for _, backendURL := range directorFound.BackendURLs {
-		request, err := c.newRequest("GET", c.host+backendURL, nil)
-		if err != nil {
-			return 0, fmt.Errorf("cannot fetch backend: %s", err)
-		}
-		var backend Backend
-		if _, err := c.doRequest(request, &backend); err != nil {
-			log.Errorf("backend fetch failed: %s", err)
-			continue
-		}
+
+	request, err := c.newRequest("GET", c.host+apiBackendPath, nil)
+	if err != nil {
+		return 0, fmt.Errorf("could not create backend list request: %s", err)
+	}
+
+	query := request.URL.Query()
+	query.Add("address", address)
+	query.Add("director", fmt.Sprintf("%d", directorFound.ID))
+	query.Add("port", fmt.Sprintf("%d", port))
+	request.URL.RawQuery = query.Encode()
+
+	var backendList BackendList
+	if _, err := c.doRequest(request, &backendList); err != nil {
+		return 0, fmt.Errorf("backend list fetch failed: %s", err)
+	}
+
+	for _, backend := range backendList.Objects {
+		log.Debugf("Backend found: %+v\n", backend)
 		if backend.Address == address && backend.Port == port {
 			return *backend.ID, nil
 		}
