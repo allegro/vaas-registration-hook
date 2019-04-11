@@ -2,6 +2,7 @@
 bin/
 build/
 target/
+dist/
 .env
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
