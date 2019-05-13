@@ -135,7 +135,6 @@ type MockClient struct {
 }
 
 func (c *MockClient) GetPod(ctx context.Context) (*corev1.Pod, error) {
-
 	podNamespace := os.Getenv(podNamespaceEnvVar)
 	podName := os.Getenv(podNameEnvVar)
 

@@ -64,9 +64,6 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 	} else {
 		return fmt.Errorf("could not find VaaS director in Pod info: %s", err)
 	}
-	config.VaaSURL = podInfo.GetVaaSURL()
-	config.VaaSUser = podInfo.GetVaaSUser()
-	config.VaaSKey = podInfo.GetVaaSKey()
 
 	log.Debugf("Register K8s config: %+v\n", config)
 

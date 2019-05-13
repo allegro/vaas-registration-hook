@@ -14,9 +14,6 @@ const (
 	keyEnv      = "podEnvironment"
 	keyDirector = "podDirector"
 	keyWeight   = "podWeight"
-	keyVaaSUser = "vaasUser"
-	keyVaaSKey  = "vaasKey"
-	keyVaaSURL  = "vaasUrl"
 )
 
 // PodInfo describes a k8s Pod
@@ -94,24 +91,6 @@ func (pi PodInfo) GetEnvironment() (string, error) {
 		return "", fmt.Errorf("environment annotation is empty, annotation key: %s", keyEnv)
 	}
 	return environment, nil
-}
-
-// GetVaaSURL returns VaaS URL
-func (pi PodInfo) GetVaaSURL() string {
-	url := pi.FindAnnotation(keyVaaSURL)
-	return url
-}
-
-// GetVaaSUser returns VaaS API Username
-func (pi PodInfo) GetVaaSUser() string {
-	username := pi.FindAnnotation(keyVaaSUser)
-	return username
-}
-
-// GetVaaSKey returns VaaS API Username
-func (pi PodInfo) GetVaaSKey() string {
-	key := pi.FindAnnotation(keyVaaSKey)
-	return key
 }
 
 // GetPodIP returns a Pod IP address

@@ -142,6 +142,11 @@ func getCommands() []cli.Command {
 						}
 						log.Info("K8s Pod environment detected")
 
+						vaasConfig, err := k8s.GetVaaSConfig()
+						Config.VaaSURL = vaasConfig.GetVaaSURL()
+						Config.VaaSUser = vaasConfig.GetVaaSUser()
+						Config.VaaSKey = vaasConfig.GetVaaSKey()
+
 						return action.RegisterK8s(podInfo, Config)
 					},
 				},
@@ -172,6 +177,12 @@ func getCommands() []cli.Command {
 							return nil
 						}
 						log.Info("K8s Pod environment detected")
+
+						vaasConfig, err := k8s.GetVaaSConfig()
+						Config.VaaSURL = vaasConfig.GetVaaSURL()
+						Config.VaaSUser = vaasConfig.GetVaaSUser()
+						Config.VaaSKey = vaasConfig.GetVaaSKey()
+
 						return action.DeregisterK8s(podInfo, Config)
 					},
 				},
