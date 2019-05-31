@@ -12,14 +12,12 @@ import (
 const (
 	podNamespaceEnvVar = "KUBERNETES_POD_NAMESPACE"
 	podNameEnvVar      = "KUBERNETES_POD_NAME"
-	configMapEnvVar    = "KUBERNETES_CONFIG_MAP"
 )
 
 // Client contains methods to access k8s API
 type Client interface {
 	// GetPod returns current pod data.
 	GetPod(ctx context.Context) (*corev1.Pod, error)
-	GetConfigMap(ctx context.Context) (*corev1.ConfigMap, error)
 }
 
 var clientProvider = func() (Client, error) {
@@ -43,17 +41,4 @@ func (c *defaultClient) GetPod(ctx context.Context) (*corev1.Pod, error) {
 	}
 
 	return pod, nil
-}
-
-// GetConfigMap returns a k8s ConfigMap
-func (c *defaultClient) GetConfigMap(ctx context.Context) (*corev1.ConfigMap, error) {
-	podNamespace := os.Getenv(podNamespaceEnvVar)
-	mapName := os.Getenv(configMapEnvVar)
-
-	config := &corev1.ConfigMap{}
-	if err := c.k8sClient.Get(ctx, podNamespace, mapName, config); err != nil {
-		return nil, fmt.Errorf("unable to get config data from API: %s", err)
-	}
-
-	return config, nil
 }

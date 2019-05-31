@@ -27,6 +27,12 @@ func DeregisterCLI(c *cli.Context) error {
 		return errors.New("no VaaS director specified")
 	}
 
+	err := config.GetSecretFromFile(config.VaaSKeyFile)
+	if err == nil {
+		return fmt.Errorf("error reading VaaS secret key: %s", err)
+	}
+	log.Debugf("Register K8s config: %+v\n", config)
+
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	backendID := c.Int(FlagBackendID)
 	if backendID == 0 {
@@ -58,6 +64,13 @@ func DeregisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 		return fmt.Errorf("could not find VaaS director in Pod info: %s", err)
 	}
 	config.Director = director
+
+	config.VaaSURL = podInfo.GetVaaSURL()
+	config.VaaSUser = podInfo.GetVaaSUser()
+	err = config.GetSecretFromFile(config.VaaSKeyFile)
+	if err == nil {
+		return fmt.Errorf("error reading VaaS secret key: %s", err)
+	}
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 

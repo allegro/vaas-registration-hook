@@ -144,14 +144,3 @@ func (c *MockClient) GetPod(ctx context.Context) (*corev1.Pod, error) {
 	}
 	return args.Get(0).(*corev1.Pod), args.Error(1)
 }
-
-func (c *MockClient) GetConfigMap(ctx context.Context) (*corev1.ConfigMap, error) {
-	podNamespace := os.Getenv(podNamespaceEnvVar)
-	mapName := os.Getenv(configMapEnvVar)
-
-	args := c.client.Called(ctx, podNamespace, mapName)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*corev1.ConfigMap), args.Error(1)
-}

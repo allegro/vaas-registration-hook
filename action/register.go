@@ -46,6 +46,11 @@ func RegisterCLI(c *cli.Context) error {
 	if config.Director == "" {
 		return errors.New("no VaaS director specified")
 	}
+	err := config.GetSecretFromFile(config.VaaSKeyFile)
+	if err == nil {
+		return fmt.Errorf("error reading VaaS secret key: %s", err)
+	}
+	log.Debugf("Register K8s config: %+v\n", config)
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	weight := c.Int(FlagWeight)
@@ -64,7 +69,12 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 	} else {
 		return fmt.Errorf("could not find VaaS director in Pod info: %s", err)
 	}
-
+	config.VaaSURL = podInfo.GetVaaSURL()
+	config.VaaSUser = podInfo.GetVaaSUser()
+	err = config.GetSecretFromFile(config.VaaSKeyFile)
+	if err == nil {
+		return fmt.Errorf("error reading VaaS secret key: %s", err)
+	}
 	log.Debugf("Register K8s config: %+v\n", config)
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)

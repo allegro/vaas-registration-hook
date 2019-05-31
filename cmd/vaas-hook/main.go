@@ -92,6 +92,12 @@ func getCommonFlags() []cli.Flag {
 			EnvVar:      action.EnvVaaSKey,
 		},
 		cli.StringFlag{
+			Name:        action.FlagSecretKeyFile,
+			Usage:       "file to read client key for Auth from",
+			Destination: &Config.VaaSKeyFile,
+			EnvVar:      action.EnvVaaSKeyFile,
+		},
+		cli.StringFlag{
 			Name:        action.FlagDirector,
 			Usage:       "VaaS director to register this backend with",
 			Destination: &Config.Director,
@@ -142,11 +148,6 @@ func getCommands() []cli.Command {
 						}
 						log.Info("K8s Pod environment detected")
 
-						vaasConfig, err := k8s.GetVaaSConfig()
-						Config.VaaSURL = vaasConfig.GetVaaSURL()
-						Config.VaaSUser = vaasConfig.GetVaaSUser()
-						Config.VaaSKey = vaasConfig.GetVaaSKey()
-
 						return action.RegisterK8s(podInfo, Config)
 					},
 				},
@@ -177,11 +178,6 @@ func getCommands() []cli.Command {
 							return nil
 						}
 						log.Info("K8s Pod environment detected")
-
-						vaasConfig, err := k8s.GetVaaSConfig()
-						Config.VaaSURL = vaasConfig.GetVaaSURL()
-						Config.VaaSUser = vaasConfig.GetVaaSUser()
-						Config.VaaSKey = vaasConfig.GetVaaSKey()
 
 						return action.DeregisterK8s(podInfo, Config)
 					},
