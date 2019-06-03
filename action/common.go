@@ -1,6 +1,8 @@
 package action
 
 import (
+	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/urfave/cli"
@@ -24,6 +26,10 @@ const (
 	FlagSecretKey = "key"
 	// EnvVaaSKey client key for Auth
 	EnvVaaSKey = "VAAS_KEY"
+	// FlagSecretKeyFile client key for Auth
+	FlagSecretKeyFile = "key-file"
+	// EnvVaaSKeyFile client key for Auth
+	EnvVaaSKeyFile = "VAAS_KEY_FILE"
 	// FlagDirector represents the director name
 	FlagDirector = "director"
 	// FlagAddr address of this backend
@@ -47,19 +53,31 @@ type CommonConfig struct {
 	VaaSURL      string
 	VaaSUser     string
 	VaaSKey      string
+	VaaSKeyFile  string
 	Port         int
 	AsyncTimeout time.Duration
 }
 
 func getCommonParameters(c *cli.Context) CommonConfig {
 	return CommonConfig{
-		Debug:    c.Bool(FlagDebug),
-		VaaSURL:  c.String(FlagVaaSURL),
-		VaaSUser: c.String(FlagUser),
-		VaaSKey:  c.String(FlagSecretKey),
-		Director: c.String(FlagDirector),
-		Address:  c.String(FlagAddress),
-		Port:     c.Int(FlagPort),
-		Canary:   c.Bool(FlagCanaryTag),
+		Debug:       c.Bool(FlagDebug),
+		VaaSURL:     c.String(FlagVaaSURL),
+		VaaSUser:    c.String(FlagUser),
+		VaaSKeyFile: c.String(FlagSecretKeyFile),
+		VaaSKey:     c.String(FlagSecretKey),
+		Director:    c.String(FlagDirector),
+		Address:     c.String(FlagAddress),
+		Port:        c.Int(FlagPort),
+		Canary:      c.Bool(FlagCanaryTag),
 	}
+}
+
+// GetSecretFromFile reads a value from provided file
+func (config CommonConfig) GetSecretFromFile(secretFile string) error {
+	secret, err := ioutil.ReadFile(secretFile)
+	if err != nil {
+		return fmt.Errorf("unable to read secret from file: %s, %s", secretFile, err)
+	}
+	config.VaaSKey = string(secret)
+	return nil
 }

@@ -21,10 +21,14 @@ const (
 // DeregisterCLI removes a backend from VaaS using CLI data
 func DeregisterCLI(c *cli.Context) error {
 	config := getCommonParameters(c.Parent().Parent())
-	log.Debugf("Deregister CLI config: %+v\n", config)
 
 	if config.Director == "" {
 		return errors.New("no VaaS director specified")
+	}
+
+	err := config.GetSecretFromFile(config.VaaSKeyFile)
+	if err != nil {
+		return fmt.Errorf("error reading VaaS secret key: %s", err)
 	}
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
@@ -58,6 +62,13 @@ func DeregisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 		return fmt.Errorf("could not find VaaS director in Pod info: %s", err)
 	}
 	config.Director = director
+
+	config.VaaSURL = podInfo.GetVaaSURL()
+	config.VaaSUser = podInfo.GetVaaSUser()
+	err = config.GetSecretFromFile(config.VaaSKeyFile)
+	if err == nil {
+		return fmt.Errorf("error reading VaaS secret key: %s", err)
+	}
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 

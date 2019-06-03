@@ -15,7 +15,6 @@ const (
 	keyDirector = "podDirector"
 	keyWeight   = "podWeight"
 	keyVaaSUser = "vaasUser"
-	keyVaaSKey  = "vaasKey"
 	keyVaaSURL  = "vaasUrl"
 )
 
@@ -106,12 +105,6 @@ func (pi PodInfo) GetVaaSURL() string {
 func (pi PodInfo) GetVaaSUser() string {
 	username := pi.FindAnnotation(keyVaaSUser)
 	return username
-}
-
-// GetVaaSKey returns VaaS API Username
-func (pi PodInfo) GetVaaSKey() string {
-	key := pi.FindAnnotation(keyVaaSKey)
-	return key
 }
 
 // GetPodIP returns a Pod IP address
