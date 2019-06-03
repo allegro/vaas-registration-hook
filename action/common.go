@@ -74,13 +74,10 @@ func getCommonParameters(c *cli.Context) CommonConfig {
 
 // GetSecretFromFile reads a value from provided file
 func (config CommonConfig) GetSecretFromFile(secretFile string) error {
-	if len(secretFile) != 0 {
-		secret, err := ioutil.ReadFile(secretFile)
-		if err != nil {
-			return fmt.Errorf("unable to read secret from file: %s, %s", secretFile, err)
-		}
-		config.VaaSKey = string(secret)
-		return nil
+	secret, err := ioutil.ReadFile(secretFile)
+	if err != nil {
+		return fmt.Errorf("unable to read secret from file: %s, %s", secretFile, err)
 	}
+	config.VaaSKey = string(secret)
 	return nil
 }

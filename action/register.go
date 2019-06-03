@@ -41,7 +41,6 @@ func GetRegisterFlags() []cli.Flag {
 // RegisterCLI configures a VaaS client from CLI data and runs register()
 func RegisterCLI(c *cli.Context) error {
 	config := getCommonParameters(c.Parent().Parent())
-	log.Debugf("Register CLI config: %+v\n", config)
 
 	if config.Director == "" {
 		return errors.New("no VaaS director specified")
@@ -50,7 +49,6 @@ func RegisterCLI(c *cli.Context) error {
 	if err == nil {
 		return fmt.Errorf("error reading VaaS secret key: %s", err)
 	}
-	log.Debugf("Register K8s config: %+v\n", config)
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	weight := c.Int(FlagWeight)
@@ -75,7 +73,6 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 	if err == nil {
 		return fmt.Errorf("error reading VaaS secret key: %s", err)
 	}
-	log.Debugf("Register K8s config: %+v\n", config)
 
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	weight, err := podInfo.GetWeight()
