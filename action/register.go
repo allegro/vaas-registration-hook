@@ -3,6 +3,7 @@ package action
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -19,6 +20,8 @@ const (
 	FlagWeight = "weight"
 	// FlagDC represents datacenter short name as defined in VaaS
 	FlagDC = "dc"
+	// EnvDC Environment var containing datacenter short name as defined in VaaS
+	EnvDC = "CLOUD_DC"
 
 	canaryTag = "canary"
 )
@@ -32,8 +35,9 @@ func GetRegisterFlags() []cli.Flag {
 			Value: 1,
 		},
 		cli.StringFlag{
-			Name:  FlagDC,
-			Usage: "datacenter short name as defined in VaaS",
+			Name:   FlagDC,
+			Usage:  "datacenter short name as defined in VaaS",
+			EnvVar: EnvDC,
 		},
 	}
 }
@@ -80,10 +84,13 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 		log.Errorf("unusable weight found %q", weight)
 		weight = 1
 	}
-	dcName, err := podInfo.GetDataCenter()
-	if err != nil {
-		log.Errorf("unusable DC name found %q", weight)
-		weight = 1
+
+	dcName := os.Getenv(EnvDC)
+	if dcName == "" {
+		dcName, err = podInfo.GetDataCenter()
+		if err != nil {
+			log.Errorf("unusable DC name found %q", dcName)
+		}
 	}
 
 	return register(apiClient, config, weight, dcName)
