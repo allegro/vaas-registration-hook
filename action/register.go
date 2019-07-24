@@ -50,7 +50,7 @@ func RegisterCLI(c *cli.Context) error {
 		return errors.New("no VaaS director specified")
 	}
 	err := config.GetSecretFromFile(config.VaaSKeyFile)
-	if err == nil {
+	if err != nil {
 		return fmt.Errorf("error reading VaaS secret key: %s", err)
 	}
 
@@ -74,7 +74,7 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 	config.VaaSURL = podInfo.GetVaaSURL()
 	config.VaaSUser = podInfo.GetVaaSUser()
 	err = config.GetSecretFromFile(config.VaaSKeyFile)
-	if err == nil {
+	if err != nil {
 		return fmt.Errorf("error reading VaaS secret key: %s", err)
 	}
 
