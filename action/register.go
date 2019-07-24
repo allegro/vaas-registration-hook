@@ -62,17 +62,23 @@ func RegisterCLI(c *cli.Context) error {
 }
 
 // RegisterK8s configures a VaaS client from K8s data and runs register()
-func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
+func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) (err error) {
 	config.Address = podInfo.GetPodIP()
 	config.Port = podInfo.GetDefaultPort()
-	director, err := podInfo.GetDirector()
-	if err == nil {
-		config.Director = director
-	} else {
-		return fmt.Errorf("could not find VaaS director in Pod info: %s", err)
+
+	config.Director, err = overrideValue(config.Director, podInfo.GetDirector(), "Director")
+	if err != nil {
+		return
 	}
-	config.VaaSURL = podInfo.GetVaaSURL()
-	config.VaaSUser = podInfo.GetVaaSUser()
+	config.VaaSURL, err = overrideValue(config.VaaSURL, podInfo.GetVaaSURL(), "VaaS URL")
+	if err != nil {
+		return
+	}
+	config.VaaSUser, err = overrideValue(config.VaaSUser, podInfo.GetVaaSUser(), "VaaS User")
+	if err != nil {
+		return
+	}
+
 	err = config.GetSecretFromFile(config.VaaSKeyFile)
 	if err != nil {
 		return fmt.Errorf("error reading VaaS secret key: %s", err)
@@ -81,19 +87,32 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 	apiClient := vaas.NewClient(config.VaaSURL, config.VaaSUser, config.VaaSKey)
 	weight, err := podInfo.GetWeight()
 	if err != nil {
-		log.Errorf("unusable weight found %q", weight)
+		log.Errorf("unusable weight %q found: %s", weight, err)
 		weight = 1
 	}
 
 	dcName := os.Getenv(EnvDC)
-	if dcName == "" {
-		dcName, err = podInfo.GetDataCenter()
-		if err != nil {
-			log.Errorf("unusable DC name found %q", dcName)
-		}
+	podDC, err := podInfo.GetDataCenter()
+	if err != nil {
+		log.Errorf("unusable DC name found %q: %s", dcName, err)
+	}
+	dcName, err = overrideValue(dcName, podDC, "DC")
+	if err != nil {
+		return
 	}
 
 	return register(apiClient, config, weight, dcName)
+}
+
+func overrideValue(oldValue, override, name string) (string, error) {
+	if override != "" {
+		log.Debugf("Overriding %s (%q) with %q form podInfo", name, oldValue, override)
+		return override, nil
+	}
+	if oldValue == "" {
+		return oldValue, fmt.Errorf("no value for %s", name)
+	}
+	return oldValue, nil
 }
 
 // register adds a backend to VaaS
@@ -109,6 +128,9 @@ func register(client vaas.Client, cfg CommonConfig, weight int, dcName string) (
 	}
 
 	director, err := client.FindDirector(cfg.Director)
+	if err != nil {
+		return fmt.Errorf("failed finding Director: %s", err)
+	}
 
 	backend := vaas.Backend{
 		ID:                 nil,
