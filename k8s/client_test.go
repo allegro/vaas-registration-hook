@@ -77,8 +77,7 @@ func TestIfReturnsCorrectAnnotationData(t *testing.T) {
 	podInfo, err := GetPodInfo()
 	require.NoError(t, err)
 
-	actualDirector, _ := podInfo.GetDirector()
-	require.Equal(t, expectedVipName, actualDirector)
+	require.Equal(t, expectedVipName, podInfo.GetDirector())
 
 	actualDC, _ := podInfo.GetDataCenter()
 	require.Equal(t, expectedDC, actualDC)
@@ -104,8 +103,7 @@ func TestIfReturnsErroredAnnotationData(t *testing.T) {
 	podInfo, err := GetPodInfo()
 	require.NoError(t, err)
 
-	_, err = podInfo.GetDirector()
-	require.EqualError(t, err, fmt.Sprintf("director annotation is empty, annotation key: %s", keyDirector))
+	require.Equal(t, "", podInfo.GetDirector())
 
 	_, err = podInfo.GetDataCenter()
 	require.EqualError(t, err, fmt.Sprintf("dc annotation is empty, annotation key: %s", keyDC))

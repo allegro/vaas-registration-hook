@@ -54,17 +54,21 @@ func DeregisterCLI(c *cli.Context) error {
 }
 
 // DeregisterK8s configures a VaaS client from K8s data and removes a backend
-func DeregisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
+func DeregisterK8s(podInfo *k8s.PodInfo, config CommonConfig) (err error) {
 	config.Address = podInfo.GetPodIP()
 	config.Port = podInfo.GetDefaultPort()
-	director, err := podInfo.GetDirector()
+	config.Director, err = overrideValue(config.Director, podInfo.GetDirector(), "Director")
 	if err != nil {
-		return fmt.Errorf("could not find VaaS director in Pod info: %s", err)
+		return
 	}
-	config.Director = director
-
-	config.VaaSURL = podInfo.GetVaaSURL()
-	config.VaaSUser = podInfo.GetVaaSUser()
+	config.VaaSURL, err = overrideValue(config.VaaSURL, podInfo.GetVaaSURL(), "VaaS URL")
+	if err != nil {
+		return
+	}
+	config.VaaSUser, err = overrideValue(config.VaaSUser, podInfo.GetVaaSUser(), "VaaS User")
+	if err != nil {
+		return
+	}
 	err = config.GetSecretFromFile(config.VaaSKeyFile)
 	if err == nil {
 		return fmt.Errorf("error reading VaaS secret key: %s", err)
@@ -81,7 +85,7 @@ func DeregisterK8s(podInfo *k8s.PodInfo, config CommonConfig) error {
 		return fmt.Errorf("could not deregister: %s", err)
 	}
 
-	return errors.New("backend ID not provided")
+	return nil
 }
 
 // GetDeregisterFlags returns a list of flags available for this action

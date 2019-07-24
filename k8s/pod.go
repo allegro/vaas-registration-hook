@@ -97,14 +97,12 @@ func (pi PodInfo) GetEnvironment() (string, error) {
 
 // GetVaaSURL returns VaaS URL
 func (pi PodInfo) GetVaaSURL() string {
-	url := pi.FindAnnotation(keyVaaSURL)
-	return url
+	return pi.FindAnnotation(keyVaaSURL)
 }
 
 // GetVaaSUser returns VaaS API Username
 func (pi PodInfo) GetVaaSUser() string {
-	username := pi.FindAnnotation(keyVaaSUser)
-	return username
+	return pi.FindAnnotation(keyVaaSUser)
 }
 
 // GetPodIP returns a Pod IP address
@@ -113,12 +111,8 @@ func (pi PodInfo) GetPodIP() string {
 }
 
 // GetDirector looks up VaaS director name in Pod annotations
-func (pi PodInfo) GetDirector() (string, error) {
-	director := pi.FindAnnotation(keyDirector)
-	if director == "" {
-		return "", fmt.Errorf("director annotation is empty, annotation key: %s", keyDirector)
-	}
-	return director, nil
+func (pi PodInfo) GetDirector() string {
+	return pi.FindAnnotation(keyDirector)
 }
 
 // GetPodInfo fetches k8s PodInfo for the current Pod
