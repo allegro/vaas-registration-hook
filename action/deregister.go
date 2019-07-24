@@ -70,7 +70,7 @@ func DeregisterK8s(podInfo *k8s.PodInfo, config CommonConfig) (err error) {
 		return
 	}
 	err = config.GetSecretFromFile(config.VaaSKeyFile)
-	if err == nil {
+	if err != nil {
 		return fmt.Errorf("error reading VaaS secret key: %s", err)
 	}
 
