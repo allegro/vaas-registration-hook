@@ -62,7 +62,7 @@ func (pi PodInfo) GetDefaultPort() int {
 func (pi PodInfo) getPorts(container *corev1.Container) []*int32 {
 	var ports []*int32
 	for _, port := range container.Ports {
-		ports = append(ports, port.HostPort)
+		ports = append(ports, port.ContainerPort)
 	}
 
 	return ports
