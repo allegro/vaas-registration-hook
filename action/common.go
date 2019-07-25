@@ -73,7 +73,7 @@ func getCommonParameters(c *cli.Context) CommonConfig {
 }
 
 // GetSecretFromFile reads a value from provided file
-func (config CommonConfig) GetSecretFromFile(secretFile string) error {
+func (config *CommonConfig) GetSecretFromFile(secretFile string) error {
 	secret, err := ioutil.ReadFile(secretFile)
 	if err != nil {
 		return fmt.Errorf("unable to read secret from file: %s, %s", secretFile, err)
