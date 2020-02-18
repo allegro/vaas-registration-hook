@@ -116,7 +116,7 @@ func TestIfReturnsErroredAnnotationData(t *testing.T) {
 
 }
 
-func TestGetPortWithMultipleContainers(t *testing.T) {
+func TestGetPortFromMultiContainerPod(t *testing.T) {
 	pod := testPod()
 	containerName := "test0"
 	ports := []int32{31111, 32111, 33111}
