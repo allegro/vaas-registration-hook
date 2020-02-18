@@ -157,7 +157,6 @@ func testPod() *corev1.Pod {
 
 type MockClient struct {
 	client    mock.Mock
-	// k8sClient mock.Mock
 }
 
 func (c *MockClient) GetPod(ctx context.Context) (*corev1.Pod, error) {
