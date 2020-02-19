@@ -42,9 +42,12 @@ func (pi PodInfo) GetPorts() []*int32 {
 	containers := pi.GetSpec().GetContainers()
 	// TODO(tz) Allow to specify which containers and ports will be registered
 	if len(containers) > 0 {
-		return pi.getPorts(containers[0])
+		for _, container := range containers {
+			if len(container.Ports) > 0 {
+				return pi.getPorts(container)
+			}
+		}
 	}
-
 	return []*int32{}
 }
 

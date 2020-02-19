@@ -116,6 +116,34 @@ func TestIfReturnsErroredAnnotationData(t *testing.T) {
 
 }
 
+func TestGetPortFromMultiContainerPod(t *testing.T) {
+	pod := testPod()
+	containerName := "test0"
+	ports := []int32{31111, 32111, 33111}
+	pod.Spec.Containers = []*corev1.Container{
+		{
+			Name: &containerName,
+			Ports: []*corev1.ContainerPort{
+				{ContainerPort: &ports[0]},
+				{ContainerPort: &ports[2]},
+			},
+		},
+	}
+
+	client := &MockClient{}
+	client.client.On("GetPod", context.Background(), "", "").
+		Return(pod, nil).Once()
+
+	clientProvider = func() (Client, error) {
+		return client, nil
+	}
+
+	podInfo, err := GetPodInfo()
+	require.NoError(t, err)
+	require.Equal(t, podInfo.GetDefaultPort(), int(ports[0]))
+
+}
+
 func testPod() *corev1.Pod {
 	return &corev1.Pod{
 		Spec:   &corev1.PodSpec{},
@@ -129,7 +157,6 @@ func testPod() *corev1.Pod {
 
 type MockClient struct {
 	client    mock.Mock
-	k8sClient mock.Mock
 }
 
 func (c *MockClient) GetPod(ctx context.Context) (*corev1.Pod, error) {

@@ -126,8 +126,8 @@ func TestIfBackendLocationIsSetFromVaasResponseHeader(t *testing.T) {
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
-
-		w.Write(mockAddBackendResponse)
+		_, err := w.Write(mockAddBackendResponse)
+		assert.NoError(t, err)
 	}))
 	defer ts.Close()
 
