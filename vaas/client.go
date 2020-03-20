@@ -64,7 +64,6 @@ type DCList struct {
 type Director struct {
 	ID          int      `json:"id,omitempty"`
 	BackendURLs []string `json:"backends,omitempty"`
-	Cluster     []string `json:"cluster,omitempty"`
 	Name        string   `json:"name,omitempty"`
 	ResourceURI string   `json:"resource_uri,omitempty"`
 }

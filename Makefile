@@ -37,11 +37,11 @@ generate-source-deps:
 	go get -v -u golang.org/x/tools/cmd/stringer
 
 lint: lint-deps
-	gometalinter.v2 --config=gometalinter.json ./...
+	golangci-lint run --config=golangcilinter.yaml ./...
 
 lint-deps:
-	@which gometalinter.v2 > /dev/null || \
-		(go get -u -v gopkg.in/alecthomas/gometalinter.v2 && gometalinter.v2 --install)
+	@which golangci-lint > /dev/null || \
+		(go get -u github.com/golangci/golangci-lint/cmd/golangci-lint)
 
 package: $(BUILD_FOLDER)/vaas-hook $(DIST_FOLDER)
 	zip -j $(DIST_FOLDER)/vaas-hook-$(APPLICATION_VERSION)-linux-amd64.zip $(BUILD_FOLDER)/vaas-hook
