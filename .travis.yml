@@ -19,4 +19,4 @@ deploy:
     tags: true
     branch: master
     repo: allegro/vaas-registration-hook
-    go: 1.12.x
+    go: 1.14.x
