@@ -1,6 +1,6 @@
 module github.com/allegro/vaas-registration-hook
 
-go 1.12
+go 1.14
 
 require (
 	github.com/ericchiang/k8s v1.2.0
@@ -14,3 +14,4 @@ require (
 	golang.org/x/sys v0.0.0-20190123074212-c6b37f3e9285 // indirect
 	golang.org/x/text v0.3.0 // indirect
 )
+
