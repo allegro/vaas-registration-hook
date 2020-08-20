@@ -2,7 +2,7 @@ name: golangci-lint
 on:
   push:
     tags:
-      - v*
+      - v[0-9]+.*
     branches:
       - master
   pull_request:
@@ -16,4 +16,3 @@ jobs:
         uses: golangci/golangci-lint-action@v1
         with:
           version: v1.29
-
