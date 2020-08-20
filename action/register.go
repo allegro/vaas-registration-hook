@@ -58,7 +58,7 @@ func RegisterCLI(c *cli.Context) error {
 	weight := c.Int(FlagWeight)
 	dcName := c.String(FlagDC)
 
-	return register(apiClient, config, weight, dcName)
+	return register(apiClient, config, weight, dcName, []string{})
 }
 
 // RegisterK8s configures a VaaS client from K8s data and runs register()
@@ -101,7 +101,10 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) (err error) {
 		return
 	}
 
-	return register(apiClient, config, weight, dcName)
+	tags := []string{
+		*podInfo.GetUID(), podInfo.GetName(),
+	}
+	return register(apiClient, config, weight, dcName, tags)
 }
 
 func overrideValue(oldValue, override, name string) (string, error) {
@@ -116,10 +119,9 @@ func overrideValue(oldValue, override, name string) (string, error) {
 }
 
 // register adds a backend to VaaS
-func register(client vaas.Client, cfg CommonConfig, weight int, dcName string) (err error) {
-	var tags []string
+func register(client vaas.Client, cfg CommonConfig, weight int, dcName string, tags []string) (err error) {
 	if cfg.Canary {
-		tags = []string{canaryTag}
+		tags = append(tags, canaryTag)
 	}
 
 	dc, err := client.GetDC(dcName)
