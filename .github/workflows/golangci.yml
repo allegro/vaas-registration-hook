@@ -8,7 +8,7 @@ on:
   pull_request:
 jobs:
   golangci:
-    name: lint
+    name: lint test build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -21,3 +21,4 @@ jobs:
       - name: Build and test project
         run: |
           make test
+          make build
