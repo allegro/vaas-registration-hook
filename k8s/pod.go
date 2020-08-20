@@ -118,6 +118,16 @@ func (pi PodInfo) GetDirector() string {
 	return pi.FindAnnotation(keyDirector)
 }
 
+// GetUID retrieves Pod UID form it's metadata
+func (pi PodInfo) GetUID() *string {
+	return pi.Metadata.Uid
+}
+
+// GetName retrieves Pod name form it's metadata
+func (pi PodInfo) GetName() string {
+	return pi.Metadata.GetName()
+}
+
 // GetPodInfo fetches k8s PodInfo for the current Pod
 func GetPodInfo() (*PodInfo, error) {
 	ctx := context.Background()
