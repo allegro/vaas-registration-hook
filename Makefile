@@ -27,9 +27,9 @@ $(DIST_FOLDER):
 	mkdir $(DIST_FOLDER)
 
 clean:
-	go clean -v .
 	rm -rf $(BUILD_FOLDER)
 	rm -rf $(CURRENT_DIR)/bin
+	go clean -v ./cmd/vaas-hook
 
 generate-source: generate-source-deps
 	go generate -v $$(go list ./... | grep -v /vendor/)
@@ -45,7 +45,7 @@ lint-deps:
 	@which golangci-lint > /dev/null || \
 		(curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BIN) v1.30.0)
 
-package: $(BUILD_FOLDER)/vaas-hook $(DIST_FOLDER)
+package: build $(DIST_FOLDER)
 	zip -j $(DIST_FOLDER)/vaas-hook-$(APPLICATION_VERSION)-linux-amd64.zip $(BUILD_FOLDER)/vaas-hook
 
 test: test-deps
