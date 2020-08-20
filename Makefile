@@ -41,7 +41,7 @@ lint: lint-deps
 
 lint-deps:
 	@which golangci-lint > /dev/null || \
-		(go get -u github.com/golangci/golangci-lint/cmd/golangci-lint)
+		(go get -u github.com/golangci/golangci-lint/cmd/golangci-lint@v1.24.0)
 
 package: $(BUILD_FOLDER)/vaas-hook $(DIST_FOLDER)
 	zip -j $(DIST_FOLDER)/vaas-hook-$(APPLICATION_VERSION)-linux-amd64.zip $(BUILD_FOLDER)/vaas-hook
