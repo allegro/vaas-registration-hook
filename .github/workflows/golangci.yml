@@ -1,4 +1,4 @@
-name: golangci-lint
+name: golangci
 on:
   push:
     tags:
@@ -15,4 +15,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v1
         with:
-          version: v1.29
+          version: v1.30
+      - name: Build and test project
+        run: |
+          make test

@@ -7,8 +7,9 @@ BUILD_FOLDER := target
 DIST_FOLDER := dist
 GO_BUILD := go build -v -ldflags "$(LDFLAGS)" -a
 
+BIN = $(CURRENT_DIR)/bin
 CURRENT_DIR = $(shell pwd)
-PATH := $(CURRENT_DIR)/bin:$(PATH)
+PATH := $(BIN):$(PATH)
 
 .PHONY: clean test all build package deps lint lint-deps \
 		generate-source generate-source-deps
@@ -37,12 +38,12 @@ generate-source-deps:
 	go get -v -u golang.org/x/tools/cmd/stringer
 
 lint: lint-deps
-	golangci-lint --version
-	golangci-lint run --config=golangcilinter.yaml ./...
+	$(BIN)/golangci-lint --version
+	$(BIN)/golangci-lint run --config=golangcilinter.yaml ./...
 
 lint-deps:
 	@which golangci-lint > /dev/null || \
-		(curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.24.0)
+		(curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BIN) v1.30.0)
 
 package: $(BUILD_FOLDER)/vaas-hook $(DIST_FOLDER)
 	zip -j $(DIST_FOLDER)/vaas-hook-$(APPLICATION_VERSION)-linux-amd64.zip $(BUILD_FOLDER)/vaas-hook
