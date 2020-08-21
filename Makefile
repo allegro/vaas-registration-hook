@@ -1,5 +1,5 @@
 APPLICATION_NAME    := github.com/allegro/vaas-registration-hook
-APPLICATION_VERSION := $(shell git describe --tags || echo "unknown")
+APPLICATION_VERSION := $(shell git describe --tags | sed 's/^v\(.*\)/\1/' || echo "unknown")
 
 LDFLAGS := -X main.Version=$(APPLICATION_VERSION)
 

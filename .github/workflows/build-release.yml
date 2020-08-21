@@ -15,7 +15,7 @@ jobs:
       - name: Set Variables
         id: set_vars
         run: |
-          VERSION=$(git describe --tags)
+          VERSION=$(git describe --tags | sed 's/^v\(.*\)/\1/')
           echo "::set-output name=version::${VERSION}"
       - name: Build project
         run: |

@@ -22,6 +22,8 @@ const (
 	FlagDC = "dc"
 	// EnvDC Environment var containing datacenter short name as defined in VaaS
 	EnvDC = "CLOUD_DC"
+	// InstanceFormat represents a backend instance tag
+	InstanceFormat = "instance:%s_%d"
 
 	canaryTag = "canary"
 )
@@ -102,9 +104,13 @@ func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) (err error) {
 	}
 
 	tags := []string{
-		*podInfo.GetUID(), podInfo.GetName(),
+		createInstanceTag(podInfo),
 	}
 	return register(apiClient, config, weight, dcName, tags)
+}
+
+func createInstanceTag(info *k8s.PodInfo) string {
+	return fmt.Sprintf(InstanceFormat, info.GetName(), info.GetDefaultPort())
 }
 
 func overrideValue(oldValue, override, name string) (string, error) {
