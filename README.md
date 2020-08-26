@@ -1,6 +1,6 @@
 # VaaS Registration Hook
 
-[![Build Status](https://travis-ci.org/allegro/vaas-registration-hook.svg?branch=master)](https://travis-ci.org/allegro/vaas-registration-hook)
+[![Build Status](https://github.com/allegro/vaas-registration-hook/workflows/golangci/badge.svg)](https://github.com/allegro/vaas-registration-hook/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/allegro/vaas-registration-hook)](https://goreportcard.com/report/github.com/allegro/vaas-registration-hook)
 [![Codecov](https://codecov.io/gh/allegro/vaas-registration-hook/branch/master/graph/badge.svg)](https://codecov.io/gh/allegro/vaas-registration-hook)
 [![GoDoc](https://godoc.org/github.com/allegro/vaas-registration-hook?status.svg)](https://godoc.org/github.com/allegro/vaas-registration-hook)

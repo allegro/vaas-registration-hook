@@ -17,3 +17,6 @@ jobs:
       - name: Build and test project
         run: |
           make
+      - uses: codecov/codecov-action@v1
+        with:
+          file: ./target/coverage.txt

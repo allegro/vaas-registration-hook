@@ -67,6 +67,7 @@ func RegisterCLI(c *cli.Context) error {
 func RegisterK8s(podInfo *k8s.PodInfo, config CommonConfig) (err error) {
 	config.Address = podInfo.GetPodIP()
 	config.Port = podInfo.GetDefaultPort()
+	config.Canary = config.Canary || podInfo.FindAnnotation("canary")
 
 	config.Director, err = overrideValue(config.Director, podInfo.GetDirector(), "Director")
 	if err != nil {
@@ -115,7 +116,7 @@ func createInstanceTag(info *k8s.PodInfo) string {
 
 func overrideValue(oldValue, override, name string) (string, error) {
 	if override != "" {
-		log.Debugf("Overriding %s (%q) with %q form podInfo", name, oldValue, override)
+		log.Debugf("Overriding %s (%q) with %q from podInfo", name, oldValue, override)
 		return override, nil
 	}
 	if oldValue == "" {
