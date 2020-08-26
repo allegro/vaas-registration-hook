@@ -23,8 +23,8 @@ type PodInfo struct {
 	*corev1.Pod
 }
 
-// FindAnnotation looks up an Annotation by key
-func (pi PodInfo) FindAnnotation(lookupKey string) string {
+// GetAnnotation looks up an Annotation by key
+func (pi PodInfo) GetAnnotation(lookupKey string) string {
 	annotations := pi.GetMetadata().GetAnnotations()
 
 	for key, value := range annotations {
@@ -35,6 +35,20 @@ func (pi PodInfo) FindAnnotation(lookupKey string) string {
 
 	// annotation can be nonexistent or empty
 	return ""
+}
+
+// FindAnnotation looks up an Annotation by key
+func (pi PodInfo) FindAnnotation(lookupKey string) bool {
+	annotations := pi.GetMetadata().GetAnnotations()
+
+	for key := range annotations {
+		if key == lookupKey {
+			return true
+		}
+	}
+
+	// annotation can be nonexistent
+	return false
 }
 
 // GetPorts returns a Pod's ports
@@ -73,7 +87,7 @@ func (pi PodInfo) getPorts(container *corev1.Container) []*int32 {
 
 // GetWeight returns a Pods Weight
 func (pi PodInfo) GetWeight() (int, error) {
-	weight := pi.FindAnnotation(keyWeight)
+	weight := pi.GetAnnotation(keyWeight)
 	if weight == "" {
 		return 0, fmt.Errorf("weight annotation is empty, annotation key: %s", keyWeight)
 	}
@@ -82,7 +96,7 @@ func (pi PodInfo) GetWeight() (int, error) {
 
 // GetDataCenter returns a Pod's datacenter
 func (pi PodInfo) GetDataCenter() (string, error) {
-	dc := pi.FindAnnotation(keyDC)
+	dc := pi.GetAnnotation(keyDC)
 	if dc == "" {
 		return "", fmt.Errorf("dc annotation is empty, annotation key: %s", keyDC)
 	}
@@ -91,7 +105,7 @@ func (pi PodInfo) GetDataCenter() (string, error) {
 
 // GetEnvironment returns a Pod's dev/test/prod environment
 func (pi PodInfo) GetEnvironment() (string, error) {
-	environment := pi.FindAnnotation(keyEnv)
+	environment := pi.GetAnnotation(keyEnv)
 	if environment == "" {
 		return "", fmt.Errorf("environment annotation is empty, annotation key: %s", keyEnv)
 	}
@@ -100,12 +114,12 @@ func (pi PodInfo) GetEnvironment() (string, error) {
 
 // GetVaaSURL returns VaaS URL
 func (pi PodInfo) GetVaaSURL() string {
-	return pi.FindAnnotation(keyVaaSURL)
+	return pi.GetAnnotation(keyVaaSURL)
 }
 
 // GetVaaSUser returns VaaS API Username
 func (pi PodInfo) GetVaaSUser() string {
-	return pi.FindAnnotation(keyVaaSUser)
+	return pi.GetAnnotation(keyVaaSUser)
 }
 
 // GetPodIP returns a Pod IP address
@@ -115,7 +129,7 @@ func (pi PodInfo) GetPodIP() string {
 
 // GetDirector looks up VaaS director name in Pod annotations
 func (pi PodInfo) GetDirector() string {
-	return pi.FindAnnotation(keyDirector)
+	return pi.GetAnnotation(keyDirector)
 }
 
 // GetUID retrieves Pod UID form it's metadata
