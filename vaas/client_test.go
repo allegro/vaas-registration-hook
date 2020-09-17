@@ -18,7 +18,7 @@ func TestNoFailureWhenFindingDirectorByName(t *testing.T) {
 		assert.Equal(t, applicationJSON, r.Header.Get(acceptHeader))
 		if r.URL.Path == "/api/v0.1/director/" && r.URL.RawQuery == "api_key=api-key&name=director&username=username" && r.Method == "GET" {
 			var dList = DirectorList{
-				Objects: []Director{{ID: expectedID, Name: "director"}},
+				Objects: []Director{*createDirector(expectedID)},
 			}
 
 			var data, _ = json.Marshal(dList)
@@ -68,9 +68,40 @@ func TestBackendRegistrationFailureAfterVaasServerError(t *testing.T) {
 
 	client := NewClient(ts.URL, "username", "api-key")
 
-	_, err := client.AddBackend(&Backend{})
+	_, err := client.AddBackend(createBackend(), createDirector(123))
 
 	assert.Error(t, err)
+}
+
+func TestBackendRegistrationWhenBackendExists(t *testing.T) {
+	backendURI := "backendURI"
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, applicationJSON, r.Header.Get(contentTypeHeader))
+		assert.Equal(t, applicationJSON, r.Header.Get(acceptHeader))
+		if r.Method == http.MethodPost {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+		var bList = BackendList{
+			Objects: []Backend{*createBackendWithUri(backendURI)},
+		}
+
+		var data, _ = json.Marshal(bList)
+
+		var _, err = w.Write(data)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+
+	client := NewClient(ts.URL, "username", "api-key")
+
+	backendResp, err := client.AddBackend(createBackend(), createDirector(123))
+
+	assert.NoError(t, err)
+	assert.Equal(t, backendURI, backendResp)
 }
 
 func TestBackendRemovalFailureAfterVaasServerError(t *testing.T) {
@@ -133,12 +164,7 @@ func TestIfBackendLocationIsSetFromVaasResponseHeader(t *testing.T) {
 
 	client := NewClient(ts.URL, "username", "api-key")
 
-	location, err := client.AddBackend(&Backend{
-		Address:     "127.0.0.1",
-		DirectorURL: "director",
-		DC:          DC{1, "DC1", "api/dc/1", "dc1"},
-		Port:        8080,
-	})
+	location, err := client.AddBackend(createBackend(), createDirector(123))
 
 	require.NoError(t, err)
 	assert.Equal(t, "location", location)
@@ -180,6 +206,27 @@ func TestNoFailureWhenRemovingNonExistingBackendInVaas(t *testing.T) {
 	err := client.DeleteBackend(123)
 
 	assert.NoError(t, err)
+}
+
+func createBackend() *Backend {
+	return createBackendWithUri("uri")
+}
+
+func createBackendWithUri(backendURI string) *Backend {
+	return &Backend{
+		Address:     "127.0.0.1",
+		DirectorURL: "directorURL",
+		ResourceURI: backendURI,
+		DC:          DC{1, "DC1", "api/dc/1", "dc1"},
+		Port:        8080,
+	}
+}
+
+func createDirector(ID int) *Director {
+	return &Director{
+		ID: ID,
+		Name: "director",
+	}
 }
 
 var mockAddBackendResponse = []byte(`{

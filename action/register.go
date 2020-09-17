@@ -153,7 +153,7 @@ func register(client vaas.Client, cfg CommonConfig, weight int, dcName string, t
 		ResourceURI:        "",
 	}
 	log.Infof("Adding address %q port %d to director %q (%d)", cfg.Address, cfg.Port, director.Name, director.ID)
-	backendID, err := client.AddBackend(&backend)
+	backendID, err := client.AddBackend(&backend, director)
 
 	if err == nil {
 		log.Infof("Received VaaS backend id: %s", backendID)
