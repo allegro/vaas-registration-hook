@@ -93,9 +93,10 @@ type Task struct {
 type Client interface {
 	FindDirector(string) (*Director, error)
 	FindDirectorID(string) (int, error)
-	AddBackend(*Backend) (string, error)
+	AddBackend(*Backend, *Director) (string, error)
 	DeleteBackend(int) error
 	GetDC(string) (*DC, error)
+	FindBackend(director *Director, address string, port int) (*Backend, error)
 	FindBackendID(director string, address string, port int) (int, error)
 }
 
@@ -142,7 +143,7 @@ func (c *defaultClient) FindDirectorID(name string) (int, error) {
 }
 
 // AddBackend adds backend in VaaS director.
-func (c *defaultClient) AddBackend(backend *Backend) (string, error) {
+func (c *defaultClient) AddBackend(backend *Backend, director *Director) (string, error) {
 	request, err := c.newRequest("POST", c.host+apiBackendPath, backend)
 	if err != nil {
 		return "", err
@@ -150,7 +151,12 @@ func (c *defaultClient) AddBackend(backend *Backend) (string, error) {
 
 	response, err := c.doRequest(request, backend)
 	if err != nil {
-		return "", err
+		backend, newErr := c.FindBackend(director, backend.Address, backend.Port)
+		if newErr != nil {
+			log.Errorf("failed finding backend: %s", err)
+			return "", err
+		}
+		return backend.ResourceURI, nil
 	}
 
 	return response.Header.Get("Location"), nil
@@ -200,29 +206,37 @@ func (c *defaultClient) FindBackendID(director string, address string, port int)
 		return 0, fmt.Errorf("cannot determine director ID: %s", err)
 	}
 
+	backend, err := c.FindBackend(directorFound, address, port)
+	if err != nil {
+		return 0, errors.New("backend not found")
+	}
+	return *backend.ID, nil
+}
+
+func (c *defaultClient) FindBackend(director *Director, address string, port int) (*Backend, error) {
 	request, err := c.newRequest("GET", c.host+apiBackendPath, nil)
 	if err != nil {
-		return 0, fmt.Errorf("could not create backend list request: %s", err)
+		return nil, fmt.Errorf("could not create backend list request: %s", err)
 	}
 
 	query := request.URL.Query()
 	query.Add("address", address)
-	query.Add("director", fmt.Sprintf("%d", directorFound.ID))
+	query.Add("director", fmt.Sprintf("%d", director.ID))
 	query.Add("port", fmt.Sprintf("%d", port))
 	request.URL.RawQuery = query.Encode()
 
 	var backendList BackendList
 	if _, err := c.doRequest(request, &backendList); err != nil {
-		return 0, fmt.Errorf("backend list fetch failed: %s", err)
+		return nil, fmt.Errorf("backend list fetch failed: %s", err)
 	}
 
 	for _, backend := range backendList.Objects {
 		log.Debugf("Backend found: %+v\n", backend)
 		if backend.Address == address && backend.Port == port {
-			return *backend.ID, nil
+			return &backend, nil
 		}
 	}
-	return 0, errors.New("backend not found")
+	return nil, errors.New("backend not found")
 }
 
 func (c *defaultClient) newRequest(method, url string, body interface{}) (*http.Request, error) {
