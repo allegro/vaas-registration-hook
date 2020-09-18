@@ -96,6 +96,7 @@ type Client interface {
 	AddBackend(*Backend, *Director) (string, error)
 	DeleteBackend(int) error
 	GetDC(string) (*DC, error)
+	FindBackend(director *Director, address string, port int) (*Backend, error)
 	FindBackendID(director string, address string, port int) (int, error)
 }
 
