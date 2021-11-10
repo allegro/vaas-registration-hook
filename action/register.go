@@ -147,7 +147,7 @@ func register(client vaas.Client, cfg CommonConfig, weight int, dcName string, t
 		DirectorURL:        director.ResourceURI,
 		DC:                 *dc,
 		Port:               cfg.Port,
-		InheritTimeProfile: false,
+		InheritTimeProfile: true,
 		Weight:             &weight,
 		Tags:               tags,
 		ResourceURI:        "",
