@@ -10,12 +10,13 @@ import (
 
 // Annotation keys
 const (
-	keyDC       = "podDC"
-	keyEnv      = "podEnvironment"
-	keyDirector = "podDirector"
-	keyWeight   = "podWeight"
-	keyVaaSUser = "vaasUser"
-	keyVaaSURL  = "vaasUrl"
+	keyDC                = "podDC"
+	keyEnv               = "podEnvironment"
+	keyDirector          = "podDirector"
+	keyWeight            = "podWeight"
+	keyVaaSUser          = "vaasUser"
+	keyVaaSURL           = "vaasUrl"
+	SidecarContainerName = "envoy-sidecar"
 )
 
 // PodInfo describes a k8s Pod
@@ -56,6 +57,11 @@ func (pi PodInfo) GetPorts() []*int32 {
 	containers := pi.GetSpec().GetContainers()
 	// TODO(tz) Allow to specify which containers and ports will be registered
 	if len(containers) > 0 {
+		for _, container := range containers {
+			if container.GetName() == SidecarContainerName {
+				return pi.getPorts(container)
+			}
+		}
 		for _, container := range containers {
 			if len(container.Ports) > 0 {
 				return pi.getPorts(container)
